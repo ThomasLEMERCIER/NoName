@@ -48,29 +48,21 @@ constexpr CastlingRight castlingRightUpdate[64] = {
 struct SidePosition // substructure of Position containing all pieces of one color
 {
     Bitboard& operator[](const PieceType piece) {
-        return pieces[static_cast<std::uint8_t>(piece)];
+        return (&pawns)[static_cast<std::uint8_t>(piece)];
     }
     Bitboard operator[](const PieceType piece) const {
-        return pieces[static_cast<std::uint8_t>(piece)];
+        return (&pawns)[static_cast<std::uint8_t>(piece)];
     }
-    
-    std::array<Bitboard, 6> pieces {0ULL}; // array of bitboards for each piece type
+
     Bitboard occupied {0};  // all squares occupied by side pieces
 
-    Bitboard& pawns = pieces[0];
-    Bitboard& knights = pieces[1];
-    Bitboard& bishops = pieces[2];
-    Bitboard& rooks = pieces[3];
-    Bitboard& queens = pieces[4];
-    Bitboard& king = pieces[5];
-
-    SidePosition(const SidePosition& other)
-        : pieces(other.pieces), occupied(other.occupied), pawns(pieces[0]),
-          knights(pieces[1]), bishops(pieces[2]), rooks(pieces[3]),
-          queens(pieces[4]), king(pieces[5]) {}
-    SidePosition() = default;
+    Bitboard pawns {0};
+    Bitboard knights {0};
+    Bitboard bishops {0};
+    Bitboard rooks {0};
+    Bitboard queens {0};
+    Bitboard king {0};
 };
-
 
 class Position
 {
@@ -84,9 +76,7 @@ public:
     Square enPassantSquare;         // en passant square
     CastlingRight castlingRights;    // castling rights (encoded as bits) 0001 = white king side, 0010 = white queen side, 0100 = black king side, 1000 = black queen side
 
-    Position() : sideToMove(Color::White), enPassantSquare(Square::None), castlingRights(CastlingRight::None) {};
-    Position(const Position& pos) = default;
-        
+    constexpr Position() : sideToMove{Color::White}, enPassantSquare{Square::None}, castlingRights{CastlingRight::None} {};
     void loadFromFen(const std::string& fen);                                     // load position from FEN string
 
     void setPiece(const Color color, const PieceType piece, const Square square);  // set piece at given square

@@ -9,6 +9,8 @@ template bool Position::isSquareAttackedBy<Color::White>(const Square square) co
 template bool Position::isSquareAttackedBy<Color::Black>(const Square square) const;
 
 void Position::loadFromFen(const std::string& fen) {
+    *this = Position();
+
     std::istringstream fenStream {fen };
 
     fenStream >> std::noskipws;
