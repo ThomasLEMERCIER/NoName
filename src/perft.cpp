@@ -15,7 +15,6 @@ std::uint64_t perftDriver(const Position& pos, const std::uint32_t depth) {
     generateMoves<MoveType::AllMoves>(moveList, pos);
 
     std::uint64_t nodes = 0;
-
     for (std::uint32_t count = 0; count < moveList.getSize(); ++count) {
         auto nextPos = Position(pos);
         if (!nextPos.makeMove(moveList[count]))

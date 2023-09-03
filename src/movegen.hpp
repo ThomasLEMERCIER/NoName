@@ -29,72 +29,86 @@ void generatePawnMoves(MoveList& moveList, const Position& position) {
     Bitboard emptySquares = ~position.occupied;
     Bitboard opponentPieces = position.getOccupied<opponent>();
 
-    Bitboard singlePushes = pawnsNotOnPromotionRank.shift<forward>() & ~position.occupied;
-    Bitboard doublePushes = (singlePushes & doublePushRank).shift<forward>() & emptySquares;
+    // generate pawns pushes
+    if constexpr (moveType == MoveType::QuietMoves || moveType == MoveType::AllMoves) {
+        Bitboard singlePushes = pawnsNotOnPromotionRank.shift<forward>() & ~position.occupied;
+        Bitboard doublePushes = (singlePushes & doublePushRank).shift<forward>() & emptySquares;
 
-    while (singlePushes) {
-        Square to = singlePushes.popLsb();
-        Square from = to.shift<backward>();
-        moveList.addMove(from, to, pawn);
+        while (singlePushes) {
+            Square to = singlePushes.popLsb();
+            Square from = to.shift<backward>();
+            moveList.addMove(from, to, pawn);
+        }
+
+        while (doublePushes) {
+            Square to = doublePushes.popLsb();
+            Square from = to.template shift<backward>().
+                    template shift<backward>();
+            moveList.addDoublePush(from, to, pawn);
+        }
     }
 
-    while (doublePushes) {
-        Square to = doublePushes.popLsb();
-        Square from = to.template shift<backward>().template shift<backward>();
-        moveList.addDoublePush(from, to, pawn);
+    // generate pawn promotions
+    if constexpr (moveType == MoveType::NonQuietMoves || moveType == MoveType::AllMoves) {
+        if (pawnsOnPromotionRank) {
+            Bitboard capturesRight = pawnsOnPromotionRank.template shift<forward>().template shift<Direction::East>() & opponentPieces;
+            Bitboard capturesLeft = pawnsOnPromotionRank.template shift<forward>(). template shift<Direction::West>() & opponentPieces;
+            Bitboard nonCaptures = pawnsOnPromotionRank.shift<forward>() & emptySquares;
+
+            while (capturesRight) {
+                Square to = capturesRight.popLsb();
+                Square from = to.template shift<backward>().template shift<Direction::West>();
+                moveList.addPromotion(from, to, pawn, true, color);
+            }
+
+            while (capturesLeft) {
+                Square to = capturesLeft.popLsb();
+                Square from = to.template shift<backward>().template shift<Direction::East>();
+                moveList.addPromotion(from, to, pawn, true, color);
+            }
+
+            while (nonCaptures) {
+                Square to = nonCaptures.popLsb();
+                Square from = to.shift<backward>();
+                moveList.addPromotion(from, to, pawn, color);
+            }
+        }
     }
 
-    if (pawnsOnPromotionRank) {
-        Bitboard capturesRight = pawnsOnPromotionRank.template shift<forward>().template shift<Direction::East>() & opponentPieces;
-        Bitboard capturesLeft = pawnsOnPromotionRank.template shift<forward>(). template shift<Direction::West>() & opponentPieces;
-        Bitboard nonCaptures = pawnsOnPromotionRank.shift<forward>() & emptySquares;
+    // generate pawn captures
+    if constexpr (moveType == MoveType::NonQuietMoves || moveType == MoveType::AllMoves) {
+        Bitboard capturesRight = pawnsNotOnPromotionRank.template shift<forward>().
+                template shift<Direction::East>() & opponentPieces;
+        Bitboard capturesLeft = pawnsNotOnPromotionRank.template shift<forward>().
+                template shift<Direction::West>() & opponentPieces;
 
         while (capturesRight) {
             Square to = capturesRight.popLsb();
-            Square from = to.template shift<backward>().template shift<Direction::West>();
-            moveList.addPromotion(from, to, pawn, true, color);
+            Square from = to.template shift<backward>().
+                    template shift<Direction::West>();
+            moveList.addMove(from, to, pawn, true);
         }
 
         while (capturesLeft) {
             Square to = capturesLeft.popLsb();
-            Square from = to.template shift<backward>().template shift<Direction::East>();
-            moveList.addPromotion(from, to, pawn, true, color);
+            Square from = to.template shift<backward>().
+                    template shift<Direction::East>();
+            moveList.addMove(from, to, pawn, true);
         }
 
-        while (nonCaptures) {
-            Square to = nonCaptures.popLsb();
-            Square from = to.shift<backward>();
-            moveList.addPromotion(from, to, pawn, color);
-        }
-    }
+        if (position.enPassantSquare != Square::None) {
+            Bitboard pawnAbleToCapture =
+                    getPawnAttacks(position.enPassantSquare, opponent) & pawnsNotOnPromotionRank;
 
-    Bitboard capturesRight = pawnsNotOnPromotionRank.template shift<forward>().template shift<Direction::East>() & opponentPieces;
-    Bitboard capturesLeft = pawnsNotOnPromotionRank.template shift<forward>().template shift<Direction::West>() & opponentPieces;
-
-    while (capturesRight) {
-        Square to = capturesRight.popLsb();
-        Square from = to.template shift<backward>().template shift<Direction::West>();
-        moveList.addMove(from, to, pawn, true);
-    }
-
-    while (capturesLeft) {
-        Square to = capturesLeft.popLsb();
-        Square from = to.template shift<backward>().template shift<Direction::East>();
-        moveList.addMove(from, to, pawn, true);
-    }
-
-    if (position.enPassantSquare != Square::None) {
-        Bitboard pawnAbleToCapture =
-                getPawnAttacks(position.enPassantSquare, opponent) & pawnsNotOnPromotionRank;
-
-        while (pawnAbleToCapture) {
-            Square from = pawnAbleToCapture.popLsb();
-            moveList.addEnPassant(from, position.enPassantSquare, pawn);
+            while (pawnAbleToCapture) {
+                Square from = pawnAbleToCapture.popLsb();
+                moveList.addEnPassant(from, position.enPassantSquare, pawn);
+            }
         }
     }
 }
 
-template <MoveType moveType, Color color>
+template <Color color>
 void generateCastlingMoves(MoveList& moveList, const Position& position) {
 
     constexpr Color opponent = ~color;
@@ -165,13 +179,22 @@ void generateCastlingMoves(MoveList& moveList, const Position& position) {
 template <MoveType moveType, Piece piece>
 void generatePieceMoves(MoveList& moveList, const Position& position) {
     constexpr Color color = getPieceColor(piece);
+    constexpr Color opponent = ~color;
     constexpr PieceType pieceType = getPieceType(piece);
+
+    Bitboard filter = ~position.getOccupied<color>();
+    if constexpr (moveType == MoveType::QuietMoves)
+        filter &= ~position.getOccupied<opponent>();
+    if constexpr (moveType == MoveType::NonQuietMoves)
+        filter &= position.getOccupied<opponent>();
+
 
     Bitboard pieces = position.getPieces<piece>();
     while (pieces) {
         Square from = pieces.popLsb();
         Bitboard attacks = getAttacks<pieceType, color>(from, position.occupied);
-        Bitboard targets = attacks & ~position.getOccupied<color>();
+        Bitboard targets = attacks & filter;
+
         while (targets) {
             Square to = targets.popLsb();
             moveList.addMove(from, to, piece, static_cast<bool>(position.occupied & to));
@@ -184,20 +207,22 @@ void generateMoves(MoveList& moveList, const Position& position) {
 
     if (position.sideToMove == Color::White) {
         generatePawnMoves<moveType, Color::White>(moveList, position);
-        generateCastlingMoves<moveType, Color::White>(moveList, position);
         generatePieceMoves<moveType, Piece::WhiteKnight>(moveList, position);
         generatePieceMoves<moveType, Piece::WhiteBishop>(moveList, position);
         generatePieceMoves<moveType, Piece::WhiteRook>(moveList, position);
         generatePieceMoves<moveType, Piece::WhiteQueen>(moveList, position);
         generatePieceMoves<moveType, Piece::WhiteKing>(moveList, position);
+        if constexpr (moveType == MoveType::QuietMoves || moveType == MoveType::AllMoves)
+            generateCastlingMoves<Color::White>(moveList, position);
     }
     else {
         generatePawnMoves<moveType, Color::Black>(moveList, position);
-        generateCastlingMoves<moveType, Color::Black>(moveList, position);
         generatePieceMoves<moveType, Piece::BlackKnight>(moveList, position);
         generatePieceMoves<moveType, Piece::BlackBishop>(moveList, position);
         generatePieceMoves<moveType, Piece::BlackRook>(moveList, position);
         generatePieceMoves<moveType, Piece::BlackQueen>(moveList, position);
         generatePieceMoves<moveType, Piece::BlackKing>(moveList, position);
+        if constexpr (moveType == MoveType::QuietMoves || moveType == MoveType::AllMoves)
+            generateCastlingMoves<Color::Black>(moveList, position);
     }
 }

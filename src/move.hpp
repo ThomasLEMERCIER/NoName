@@ -60,6 +60,8 @@ public:
     constexpr bool isEnpassant() const { return (value >> 22) & 0x1; }
     constexpr bool isCastling() const { return (value >> 23) & 0x1; }
 
+    constexpr bool isQuiet() const { return !isCapture() && getPromotionPiece() == static_cast<Piece>(0); }
+
     friend std::ostream& operator<<(std::ostream& output, const Move& move) {
         if (move.getPromotionPiece() != static_cast<Piece>(0)) {
             output << move.getFrom() << move.getTo() << pieceNames[static_cast<std::uint8_t>(move.getPromotionPiece())];
