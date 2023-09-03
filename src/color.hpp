@@ -6,7 +6,6 @@
 enum class Color : std::uint8_t {
     White,
     Black,
-    Both,
 };
 
 constexpr Color operator~(const Color color) {

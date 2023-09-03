@@ -30,20 +30,20 @@ endif()
 # Set optimization flags
 if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "Profile")
     add_compile_options(
-    -O3                     # High level of optimization
-    -march=native           # Optimize for the current architecture
+        -O3                     # High level of optimization
+        -march=native           # Optimize for the current architecture
     )
 endif()
         
 # Set release flags
 if (CMAKE_BUILD_TYPE STREQUAL "Release")       
     add_compile_options(
-    -fomit-frame-pointer    # Omit frame pointers for faster function calls
-    -ffast-math             # Allow more aggressive floating-point optimizations
-    -flto                   # Enable Link-Time Optimization
-    -funroll-loops          # Unroll loops for performance
-    -finline-functions      # Inline small functions for speed
-    -fno-rtti               # Disable C++ RTTI
+        -fomit-frame-pointer    # Omit frame pointers for faster function calls
+        -ffast-math             # Allow more aggressive floating-point optimizations
+        -flto                   # Enable Link-Time Optimization
+        -funroll-loops          # Unroll loops for performance
+        -finline-functions      # Inline small functions for speed
+        -fno-rtti               # Disable C++ RTTI
     )
 endif()
 

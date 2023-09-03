@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstdint>
-#include <iostream>
-
 #include "square.hpp"
 #include "utils.hpp"
+
+#include <cstdint>
+#include <iostream>
 
 class Bitboard
 {
@@ -14,12 +14,12 @@ private:
 public:
     static constexpr Bitboard FileBitboard(std::uint8_t file) { return Bitboard { 0x0101010101010101ULL << file }; }
     static constexpr Bitboard RankBitboard(std::uint8_t rank) { return Bitboard { 0xffULL << (rank * 8) }; }
-    static constexpr Bitboard DiagonalBitboard(Square square) { Bitboard main_diag {0x8040201008040201ULL};
+    static constexpr Bitboard DiagonalBitboard(Square square) { Bitboard mainDiag {0x8040201008040201ULL};
                                                                 int diag  = static_cast<int>(square.file()) - static_cast<int>(square.rank());
-                                                                return diag >= 0 ? main_diag >> diag * 8 : main_diag << -diag * 8; }
-    static constexpr Bitboard AntiDiagonalBitboard(Square square) { Bitboard main_diag {0x0102040810204080ULL};
+                                                                return diag >= 0 ? mainDiag >> diag * 8 : mainDiag << -diag * 8; }
+    static constexpr Bitboard AntiDiagonalBitboard(Square square) { Bitboard mainDiag {0x0102040810204080ULL};
                                                                     int diag  = 7 - static_cast<int>(square.file()) - static_cast<int>(square.rank());
-                                                                    return diag >= 0 ? main_diag >> diag * 8 : main_diag << -diag * 8; }
+                                                                    return diag >= 0 ? mainDiag >> diag * 8 : mainDiag << -diag * 8; }
     
     constexpr Bitboard(std::uint64_t val = 0ULL) : value(val) {};
     constexpr Bitboard(Square square) : value(1ULL << square.index()) {};
@@ -56,9 +56,9 @@ public:
     constexpr Bitboard south() const { return Bitboard { value >> 8u }; }
     constexpr Bitboard west() const { return Bitboard { value >> 1u } & ~FileBitboard(7); }
 
-    constexpr std::uint8_t count() const { return PopCount(value); }
-    constexpr std::uint8_t PopLsb() { std::uint8_t index = GetLsbIndex(value); value &= value - 1; return index; }
-    constexpr std::uint8_t Lsb() const { return GetLsbIndex(value); }
+    constexpr std::uint8_t count() const { return popCount(value); }
+    constexpr std::uint8_t popLsb() { std::uint8_t index = getLsbIndex(value); value &= value - 1; return index; }
+    constexpr std::uint8_t lsb() const { return getLsbIndex(value); }
 
     constexpr bool operator==(const Bitboard& rhs) const { return value == rhs.value; }
     constexpr bool operator!=(const Bitboard& rhs) const { return value != rhs.value; }

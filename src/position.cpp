@@ -1,23 +1,23 @@
 #include "position.hpp"
 
-#include <sstream>
-
 #include "attacks.hpp"
 
+#include <sstream>
+
 // forwards instantiation of template function
-template bool Position::is_square_attacked_by<Color::White>(const Square square) const;
-template bool Position::is_square_attacked_by<Color::Black>(const Square square) const;
+template bool Position::isSquareAttackedBy<Color::White>(const Square square) const;
+template bool Position::isSquareAttackedBy<Color::Black>(const Square square) const;
 
-void Position::load_from_fen(const std::string& fen) {
-    std::istringstream fen_stream { fen };
+void Position::loadFromFen(const std::string& fen) {
+    std::istringstream fenStream {fen };
 
-    fen_stream >> std::noskipws;
-    unsigned char token;
+    fenStream >> std::noskipws;
+    char token;
 
 
     std::uint8_t rank = 7, file = 0;
 
-    while ((fen_stream  >> token) && token != ' ') {
+    while ((fenStream >> token) && token != ' ') {
         if (token == '/') {
             rank--;
             file = 0;
@@ -26,44 +26,44 @@ void Position::load_from_fen(const std::string& fen) {
             file += (token - '0');
         }
         else {
-            const Piece piece = PieceChars.at(token);
-            const PieceType piece_type = get_piece_type(piece); 
+            const Piece piece = pieceChars.at(token);
+            const PieceType pieceType = getPieceType(piece);
             const Square sq {rank, file};
             const Color color = (piece < Piece::BlackPawn) ? Color::White : Color::Black;
 
-            set_piece(color, piece_type, sq);
+            setPiece(color, pieceType, sq);
             file++;
         }
     }
 
-    fen_stream >> token;
-    side_to_move = (token == 'w') ? Color::White : Color::Black;
+    fenStream >> token;
+    sideToMove = (token == 'w') ? Color::White : Color::Black;
 
-    fen_stream >> token;
-    while ((fen_stream >> token) && token != ' ') {
+    fenStream >> token;
+    while ((fenStream >> token) && token != ' ') {
         switch (token)
         {
-            case 'K': castling_rights |= CastlingRight::WhiteKingSide; break;
-            case 'Q': castling_rights |= CastlingRight::WhiteQueenSide; break;
-            case 'k': castling_rights |= CastlingRight::BlackKingSide; break;
-            case 'q': castling_rights |= CastlingRight::BlackQueenSide; break;
+            case 'K': castlingRights |= CastlingRight::WhiteKingSide; break;
+            case 'Q': castlingRights |= CastlingRight::WhiteQueenSide; break;
+            case 'k': castlingRights |= CastlingRight::BlackKingSide; break;
+            case 'q': castlingRights |= CastlingRight::BlackQueenSide; break;
             default: break;
         }
     }
 
-    fen_stream >> token;
+    fenStream >> token;
     if (token == '-') {
-        en_passant_square = Square::None;
+        enPassantSquare = Square::None;
     }
     else {
         file = token - 'a';
-        fen_stream >> token;
+        fenStream >> token;
         rank = (token - '1');
-        en_passant_square = Square { rank, file }; 
+        enPassantSquare = Square {rank, file };
     }
 }
 
-void Position::set_piece(const Color color, const PieceType piece, const Square square) {
+void Position::setPiece(const Color color, const PieceType piece, const Square square) {
     Bitboard mask { square };
     SidePosition& side = (color == Color::White) ? white : black;
 
@@ -72,7 +72,7 @@ void Position::set_piece(const Color color, const PieceType piece, const Square 
     occupied |= mask;
 }
 
-void Position::remove_piece(const Color color, const PieceType piece, const Square square) {
+void Position::removePiece(const Color color, const PieceType piece, const Square square) {
     Bitboard mask { square };
     SidePosition& side = (color == Color::White) ? white : black;
 
@@ -81,7 +81,7 @@ void Position::remove_piece(const Color color, const PieceType piece, const Squa
     occupied ^= mask;
 }
 
-Piece Position::piece_at(const Square square) const {
+Piece Position::pieceAt(const Square square) const {
     Bitboard mask { square };
 
     // check if square is occupied by white piece
@@ -105,88 +105,88 @@ Piece Position::piece_at(const Square square) const {
 } 
 
 template<Color color>
-bool Position::is_square_attacked_by(const Square square) const {
+bool Position::isSquareAttackedBy(const Square square) const {
     if constexpr (color == Color::White) {
-        if (white.pawns & get_pawn_attacks(square, Color::Black))   { return true; }
-        if (white.knights & get_knight_attacks(square))             { return true; }
-        if (white.bishops & get_bishop_attacks(square, occupied))   { return true; }
-        if (white.rooks & get_rook_attacks(square, occupied))       { return true; }
-        if (white.queens & get_queen_attacks(square, occupied))     { return true; }
-        if (white.king & get_king_attacks(square))                  { return true; }
+        if (white.pawns & getPawnAttacks(square, Color::Black))   { return true; }
+        if (white.knights & getKnightAttacks(square))             { return true; }
+        if (white.bishops & getBishopAttacks(square, occupied))   { return true; }
+        if (white.rooks & getRookAttacks(square, occupied))       { return true; }
+        if (white.queens & getQueenAttacks(square, occupied))     { return true; }
+        if (white.king & getKingAttacks(square))                  { return true; }
     }
     else {
-        if (black.pawns & get_pawn_attacks(square, Color::White))   { return true; }
-        if (black.knights & get_knight_attacks(square))             { return true; }
-        if (black.bishops & get_bishop_attacks(square, occupied))   { return true; }
-        if (black.rooks & get_rook_attacks(square, occupied))       { return true; }
-        if (black.queens & get_queen_attacks(square, occupied))     { return true; }
-        if (black.king & get_king_attacks(square))                  { return true; }
+        if (black.pawns & getPawnAttacks(square, Color::White))   { return true; }
+        if (black.knights & getKnightAttacks(square))             { return true; }
+        if (black.bishops & getBishopAttacks(square, occupied))   { return true; }
+        if (black.rooks & getRookAttacks(square, occupied))       { return true; }
+        if (black.queens & getQueenAttacks(square, occupied))     { return true; }
+        if (black.king & getKingAttacks(square))                  { return true; }
     }
 
     return false;
 }
 
-bool Position::is_in_check(const Color color) const {
-    if (color == Color::White)  { return is_square_attacked_by<Color::Black>(white.king.Lsb()); }
-    else                        { return is_square_attacked_by<Color::White>(black.king.Lsb()); }
+bool Position::isInCheck(const Color color) const {
+    if (color == Color::White)  { return isSquareAttackedBy<Color::Black>(white.king.lsb()); }
+    else                        { return isSquareAttackedBy<Color::White>(black.king.lsb()); }
 }
 
-bool Position::make_move(const Move move) {
-    const bool capture = move.is_capture();
-    const bool double_push = move.is_double_push();
-    const bool enpassant = move.is_enpassant();
-    const bool castling = move.is_castling();
+bool Position::makeMove(const Move move) {
+    const bool capture = move.isCapture();
+    const bool doublePush = move.isDoublePush();
+    const bool enpassant = move.isEnpassant();
+    const bool castling = move.isCastling();
 
-    const Square from = move.get_from();
-    const Square to = move.get_to();
-    const Piece piece = move.get_piece();
-    const PieceType piece_type = get_piece_type(piece);
-    const Piece promotion_piece = move.get_promotion_piece();
-    const PieceType promotion_piece_type = get_piece_type(promotion_piece);
-    const Piece captured_piece = enpassant ? Piece::WhitePawn : piece_at(to);
-    const PieceType captured_piece_type = get_piece_type(captured_piece);
+    const Square from = move.getFrom();
+    const Square to = move.getTo();
+    const Piece piece = move.getPiece();
+    const PieceType pieceType = getPieceType(piece);
+    const Piece promotionPiece = move.getPromotionPiece();
+    const PieceType promotionPieceType = getPieceType(promotionPiece);
+    const Piece capturedPiece = enpassant ? Piece::WhitePawn : pieceAt(to);
+    const PieceType capturedPieceType = getPieceType(capturedPiece);
 
-    const std::uint8_t opponent_enpassant_rank = (side_to_move == Color::White) ? 4 : 3;
-    const std::uint8_t enpassant_rank = (side_to_move == Color::White) ? 2 : 5;
+    const std::uint8_t opponentEnpassantRank = (sideToMove == Color::White) ? 4 : 3;
+    const std::uint8_t enpassantRank = (sideToMove == Color::White) ? 2 : 5;
 
     if (castling) {
-        Square rook_from = RookFromCastling(to);
-        Square rook_to = RookToCastling(to);
+        Square rookFrom = rookFromCastling(to);
+        Square rookTo = rookToCastling(to);
 
-        remove_piece(side_to_move, PieceType::Rook, rook_from);
-        set_piece(side_to_move, PieceType::Rook, rook_to);
+        removePiece(sideToMove, PieceType::Rook, rookFrom);
+        setPiece(sideToMove, PieceType::Rook, rookTo);
     }
     else if (capture) {
-        Square captured_square = enpassant ? Square(opponent_enpassant_rank, to.file()) : to;
-        remove_piece(~side_to_move, captured_piece_type, captured_square);
+        Square capturedSquare = enpassant ? Square(opponentEnpassantRank, to.file()) : to;
+        removePiece(~sideToMove, capturedPieceType, capturedSquare);
     }
 
-    remove_piece(side_to_move, piece_type, from);
-    set_piece(side_to_move, piece_type, to);
+    removePiece(sideToMove, pieceType, from);
+    setPiece(sideToMove, pieceType, to);
 
-    if (en_passant_square != Square::None) {
-        en_passant_square = Square::None;
+    if (enPassantSquare != Square::None) {
+        enPassantSquare = Square::None;
     }
 
-    if (piece_type == PieceType::Pawn) {
-        if (double_push) {
-            en_passant_square = Square(enpassant_rank, to.file());
+    if (pieceType == PieceType::Pawn) {
+        if (doublePush) {
+            enPassantSquare = Square(enpassantRank, to.file());
         }
-        else if (promotion_piece != static_cast<Piece>(0)) {
-            remove_piece(side_to_move, PieceType::Pawn, to);
-            set_piece(side_to_move, promotion_piece_type, to);
+        else if (promotionPiece != static_cast<Piece>(0)) {
+            removePiece(sideToMove, PieceType::Pawn, to);
+            setPiece(sideToMove, promotionPieceType, to);
         }
     }
 
-    // if (castling_rights != CastlingRight::None) {
-        castling_rights &= CastlingRightUpdate[from.index()];
-        castling_rights &= CastlingRightUpdate[to.index()];
+    // if (castlingRights != CastlingRight::None) {
+        castlingRights &= castlingRightUpdate[from.index()];
+    castlingRights &= castlingRightUpdate[to.index()];
     // }
 
-    Color prev_side_to_move = side_to_move;
-    side_to_move = ~side_to_move;
+    Color prevSideToMove = sideToMove;
+    sideToMove = ~sideToMove;
 
-    return !is_in_check(prev_side_to_move);
+    return !isInCheck(prevSideToMove);
 }
 
 std::ostream& operator<<(std::ostream& output, const Position& pos) {
@@ -194,9 +194,9 @@ std::ostream& operator<<(std::ostream& output, const Position& pos) {
         output << static_cast<int>(rank + 1) << " |";
         for (std::uint8_t file = 0; file < 8; ++file) {
             const Square sq = Square { rank, file };
-            const Piece piece = pos.piece_at(sq);
+            const Piece piece = pos.pieceAt(sq);
 
-            output << " " << PieceNames[static_cast<std::uint8_t>(piece)];
+            output << " " << pieceNames[static_cast<std::uint8_t>(piece)];
         }
         output << "\n";
     }
@@ -204,13 +204,13 @@ std::ostream& operator<<(std::ostream& output, const Position& pos) {
     output << "   ----------------\n";
     output << "    a b c d e f g h\n";
 
-    output << "\n\n    Side to move: " << ((pos.side_to_move == Color::White) ? "White" : "Black");
+    output << "\n\n    Side to move: " << ((pos.sideToMove == Color::White) ? "White" : "Black");
     output << "\n    Castling rights: ";
-    if ((pos.castling_rights & CastlingRight::WhiteKingSide) != CastlingRight::None)    { output << "K"; }
-    if ((pos.castling_rights & CastlingRight::WhiteQueenSide) != CastlingRight::None)   { output << "Q"; }
-    if ((pos.castling_rights & CastlingRight::BlackKingSide) != CastlingRight::None)    { output << "k"; }
-    if ((pos.castling_rights & CastlingRight::BlackQueenSide) != CastlingRight::None)   { output << "q"; }
-    output << "\n    En passant square: " << pos.en_passant_square << std::endl;
+    if ((pos.castlingRights & CastlingRight::WhiteKingSide) != CastlingRight::None)    { output << "K"; }
+    if ((pos.castlingRights & CastlingRight::WhiteQueenSide) != CastlingRight::None)   { output << "Q"; }
+    if ((pos.castlingRights & CastlingRight::BlackKingSide) != CastlingRight::None)    { output << "k"; }
+    if ((pos.castlingRights & CastlingRight::BlackQueenSide) != CastlingRight::None)   { output << "q"; }
+    output << "\n    En passant square: " << pos.enPassantSquare << std::endl;
 
     // output << "\n\n    White occupied: \n" << pos.white.occupied;
     // output << "\n\n    Black occupied: \n" << pos.black.occupied;

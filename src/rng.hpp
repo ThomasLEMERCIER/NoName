@@ -27,7 +27,7 @@ inline std::uint64_t rotl(const std::uint64_t x, int k) {
 
 class PRNG {
 private:
-    std::uint64_t s[4];
+    std::uint64_t s[4]{};
 
 public:
     std::uint64_t next() {
@@ -47,11 +47,11 @@ public:
         return result;
     }
 
-    std::uint64_t next_sparse() {
+    std::uint64_t nextSparse() {
         return next() & next() & next();
     }
 
-    PRNG(std::uint64_t seed) {
+    explicit PRNG(std::uint64_t seed) {
         s[0] = seed;
         s[1] = seed;
         s[2] = seed;

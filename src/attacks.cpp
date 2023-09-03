@@ -1,26 +1,25 @@
 #include "attacks.hpp"
 
-#include <cstdint>
-#include <cstring> // std::memset
-#include <iostream>
-
 #include "rng.hpp"
 
-Bitboard KnightAttacks[64];
-Bitboard KingAttacks[64];
-Bitboard PawnAttacks[2][64];
-Bitboard RookAttacks[64][4096];
-Bitboard BishopAttacks[64][512];
+#include <algorithm> // std::fill
+#include <iostream>
 
-Bitboard RookMasks[64];
-Bitboard BishopMasks[64];
+Bitboard knightAttacks[64];
+Bitboard kingAttacks[64];
+Bitboard pawnAttacks[2][64];
+Bitboard rookAttacks[64][4096];
+Bitboard bishopAttacks[64][512];
 
-Bitboard RookMagics[64];
-Bitboard BishopMagics[64];
-std::uint8_t RookMagicShifts[64];
-std::uint8_t BishopMagicShifts[64];
+Bitboard rookMasks[64];
+Bitboard bishopMasks[64];
 
-void init_knight_attacks() {
+Bitboard rookMagics[64];
+Bitboard bishopMagics[64];
+std::uint8_t rookMagicShifts[64];
+std::uint8_t bishopMagicShifts[64];
+
+void initKnightAttacks() {
     for (std::uint8_t sq = 0; sq < 64; sq++) {
         Square square { sq };
         Bitboard knight { square };
@@ -30,11 +29,11 @@ void init_knight_attacks() {
         Bitboard r2 = (knight << 2) & Bitboard(0xfcfcfcfcfcfcfcfcULL);
         Bitboard h1 = l1 | r1;
         Bitboard h2 = l2 | r2;
-        KnightAttacks[square.index()] = (h1<<16) | (h1>>16) | (h2<<8) | (h2>>8);
+        knightAttacks[square.index()] = (h1 << 16) | (h1 >> 16) | (h2 << 8) | (h2 >> 8);
     }
 }
 
-void init_king_attacks() {
+void initKingAttacks() {
     for (std::uint8_t sq = 0; sq < 64; sq++) {
         Square square { sq };
         Bitboard king { square };
@@ -42,85 +41,85 @@ void init_king_attacks() {
         Bitboard attacks = king.east() | king.west();
         king |= attacks;
         attacks |= king.north() | king.south();
-        KingAttacks[square.index()] = attacks;        
+        kingAttacks[square.index()] = attacks;
     }
 }
 
-void init_pawn_attacks() {
+void initPawnAttacks() {
     for (std::uint8_t sq = 0; sq < 64; sq++) {
         Square square { sq };
         Bitboard pawn  { square };
         Bitboard attacks = pawn.east() | pawn.west();
-        PawnAttacks[static_cast<std::uint8_t>(Color::White)][square.index()] = attacks.north();
-        PawnAttacks[static_cast<std::uint8_t>(Color::Black)][square.index()] = attacks.south();
+        pawnAttacks[static_cast<std::uint8_t>(Color::White)][square.index()] = attacks.north();
+        pawnAttacks[static_cast<std::uint8_t>(Color::Black)][square.index()] = attacks.south();
     }
 }
 
-void init_rook_attacks() {
-    init_rook_masks();
-    init_rook_shifts();
-    init_rook_magics();
-    init_sliding_attacks(SlidingPiece::Rook);
+void initRookAttacks() {
+    initRookMasks();
+    initRookShifts();
+    initRookMagics();
+    initSlidingAttacks(SlidingPiece::Rook);
 }
 
-void init_bishop_attacks() {
-    init_bishop_masks();
-    init_bishop_shifts();
-    init_bishop_magics();
-    init_sliding_attacks(SlidingPiece::Bishop);
+void initBishopAttacks() {
+    initBishopMasks();
+    initBishopShifts();
+    initBishopMagics();
+    initSlidingAttacks(SlidingPiece::Bishop);
 }
 
-void init_attacks() {
-    init_knight_attacks();
-    init_king_attacks();
-    init_pawn_attacks();
-    init_rook_attacks();
-    init_bishop_attacks();
+void initAttacks() {
+    initKnightAttacks();
+    initKingAttacks();
+    initPawnAttacks();
+    initRookAttacks();
+    initBishopAttacks();
 }
 
-void init_rook_masks() {
+void initRookMasks() {
     for (std::uint8_t sq = 0; sq < 64; sq ++) {
         Square square { sq };
 
         Bitboard horizontal = Bitboard::RankBitboard(square.rank()) & ~Bitboard::FileBitboard(7) & ~Bitboard::FileBitboard(0);
         Bitboard vertical = Bitboard::FileBitboard(square.file()) & ~Bitboard::RankBitboard(7) & ~Bitboard::RankBitboard(0);
 
-        RookMasks[square.index()] = (horizontal | vertical) & ~Bitboard(square);
+        rookMasks[square.index()] = (horizontal | vertical) & ~Bitboard(square);
     }
 }
 
-void init_bishop_masks() {
+void initBishopMasks() {
     for (std::uint8_t sq = 0; sq < 64; sq ++) {
         Square square { sq };
 
         Bitboard diagonal = Bitboard::DiagonalBitboard(square);
-        Bitboard anti_diagonal = Bitboard::AntiDiagonalBitboard(square);
+        Bitboard antiDiagonal = Bitboard::AntiDiagonalBitboard(square);
 
-        Bitboard mask = (diagonal | anti_diagonal) & ~Bitboard(square);
+        Bitboard mask = (diagonal | antiDiagonal) & ~Bitboard(square);
         mask &= ~Bitboard::FileBitboard(7) & ~Bitboard::FileBitboard(0);
         mask &= ~Bitboard::RankBitboard(7) & ~Bitboard::RankBitboard(0);
 
-        BishopMasks[square.index()] = mask;
+        bishopMasks[square.index()] = mask;
     }
 }
 
-void init_rook_shifts() {
+void initRookShifts() {
     for (std::uint8_t sq = 0; sq < 64; sq++) {
         Square square { sq };
-        Bitboard mask = RookMasks[square.index()];
-        RookMagicShifts[square.index()] = 64 - mask.count();
+        Bitboard mask = rookMasks[square.index()];
+        rookMagicShifts[square.index()] = 64 - mask.count();
     }
 }
 
-void init_bishop_shifts() {
+void initBishopShifts() {
     for (std::uint8_t sq = 0; sq < 64; sq++) {
         Square square { sq };
-        Bitboard mask = BishopMasks[square.index()];
-        BishopMagicShifts[square.index()] = 64 - mask.count();
+        Bitboard mask = bishopMasks[square.index()];
+        bishopMagicShifts[square.index()] = 64 - mask.count();
     }
 }
 
-Bitboard get_rook_attacks_OTF(Square square, Bitboard occupied) {
+Bitboard getRookAttacksOTF(Square square, Bitboard occupied) {
     Bitboard attacks = 0ULL;
     std::uint8_t rank = square.rank();
     std::uint8_t file = square.file();
@@ -133,7 +132,7 @@ Bitboard get_rook_attacks_OTF(Square square, Bitboard occupied) {
     return attacks;
 }
 
-Bitboard get_bishop_attacks_OTF(Square square, Bitboard occupied) {
+Bitboard getBishopAttacksOTF(Square square, Bitboard occupied) {
     Bitboard attacks = 0ULL;
     std::uint8_t rank = square.rank();
     std::uint8_t file = square.file();
@@ -146,123 +145,125 @@ Bitboard get_bishop_attacks_OTF(Square square, Bitboard occupied) {
     return attacks;
 }
 
-void init_rook_magics() {
+void initRookMagics() {
     for (std::uint8_t sq = 0; sq < 64; sq++) {
         Square square { sq };
-        RookMagics[square.index()] = find_magic(square, SlidingPiece::Rook);
+        rookMagics[square.index()] = findMagic(square, SlidingPiece::Rook);
     }
 }
 
-void init_bishop_magics() {
+void initBishopMagics() {
     for (std::uint8_t sq = 0; sq < 64; sq++) {
         Square square { sq };
-        BishopMagics[square.index()] = find_magic(square, SlidingPiece::Bishop);
+        bishopMagics[square.index()] = findMagic(square, SlidingPiece::Bishop);
     }
 }
 
-Bitboard find_magic(Square square, SlidingPiece piece) {
-    Bitboard mask = piece == SlidingPiece::Rook ? RookMasks[square.index()] : BishopMasks[square.index()];
+Bitboard findMagic(Square square, SlidingPiece piece) {
+    Bitboard mask = piece == SlidingPiece::Rook ? rookMasks[square.index()] : bishopMasks[square.index()];
 
-    // we init all possible occupancy variations and their corresponding attacks
+    // we initialize all possible occupancy variations and their corresponding attacks
     // to avoid having to calculate them later when we search for a magic number
-    Bitboard occupancy_variations[4096];
+    Bitboard occupancyVariations[4096];
     Bitboard attacks[4096];
 
     // number of occupancy variations for given mask
-    std::uint16_t occupancy_variations_count = 1 << mask.count();
+    std::uint16_t occupancyVariationsCount = 1 << mask.count();
 
     Bitboard variation = 0ULL;
-    int variation_index = 0;
+    int variationIndex = 0;
     do {
-        occupancy_variations[variation_index] = variation;
-        attacks[variation_index] = piece == SlidingPiece::Rook ? get_rook_attacks_OTF(square, variation) : get_bishop_attacks_OTF(square, variation);
+        occupancyVariations[variationIndex] = variation;
+        attacks[variationIndex] = piece == SlidingPiece::Rook ? getRookAttacksOTF(square, variation) : getBishopAttacksOTF(
+                square, variation);
         variation = (variation - mask) & mask; // Carry-Rippler trick
-        variation_index++;
+        variationIndex++;
     } while (variation);
 
     // now we search for a magic number
     // we try random numbers until we find one that works
     // a magic number works if it maps all occupancy variations to unique attacks
     Bitboard magic;
-    Bitboard used_attacks[4096] = {0ULL};
-    bool magic_found = false;
+    Bitboard usedAttacks[4096] = {0ULL};
+    bool magicFound = false;
     PRNG rng { 0x1234567890abcdefULL };
-    std::uint8_t shift = piece == SlidingPiece::Rook ? RookMagicShifts[square.index()] : BishopMagicShifts[square.index()];
+    std::uint8_t shift = piece == SlidingPiece::Rook ? rookMagicShifts[square.index()] : bishopMagicShifts[square.index()];
     
-    for (int tries = 0; !magic_found && tries < 10000000; tries++) {
-        magic = rng.next_sparse();
+    for (int tries = 0; !magicFound && tries < 10000000; tries++) {
+        magic = rng.nextSparse();
         tries++;
 
         if (((mask * magic) & Bitboard(0xFF00000000000000ULL)).count() < 6) continue;
 
-        std::memset(used_attacks, 0ULL, sizeof(used_attacks));
-        magic_found = true;
+        std::fill(usedAttacks, usedAttacks + occupancyVariationsCount, 0ULL);
+        magicFound = true;
 
-        for (variation_index = 0; variation_index < occupancy_variations_count; variation_index++) {
-            std::uint16_t magic_index = static_cast<std::uint16_t>((occupancy_variations[variation_index] * magic) >> shift);
-            if (used_attacks[magic_index] == 0ULL) {
-                used_attacks[magic_index] = attacks[variation_index];
-            } else if (used_attacks[magic_index] != attacks[variation_index]) {
-                magic_found = false;
+        for (variationIndex = 0; variationIndex < occupancyVariationsCount; variationIndex++) {
+            std::uint16_t magicIndex = static_cast<std::uint16_t>((occupancyVariations[variationIndex] * magic) >> shift);
+            if (usedAttacks[magicIndex] == 0ULL) {
+                usedAttacks[magicIndex] = attacks[variationIndex];
+            } else if (usedAttacks[magicIndex] != attacks[variationIndex]) {
+                magicFound = false;
                 break;
             }
         }
     }
 
-    if (magic_found) return magic;
+    if (magicFound) return magic;
     std::cout << "Magic not found for square " << square << " and piece " << (piece == SlidingPiece::Rook ? "rook" : "bishop") << std::endl;
     return 0ULL;
 }
 
-void init_sliding_attacks(SlidingPiece piece) {
+void initSlidingAttacks(SlidingPiece piece) {
     for (std::uint8_t sq = 0; sq < 64; sq++) {
         Square square { sq };
-        Bitboard mask = piece == SlidingPiece::Rook ? RookMasks[square.index()] : BishopMasks[square.index()];
-        Bitboard magic = piece == SlidingPiece::Rook ? RookMagics[square.index()] : BishopMagics[square.index()];
-        std::uint8_t shift = piece == SlidingPiece::Rook ? RookMagicShifts[square.index()] : BishopMagicShifts[square.index()];
+        Bitboard mask = piece == SlidingPiece::Rook ? rookMasks[square.index()] : bishopMasks[square.index()];
+        Bitboard magic = piece == SlidingPiece::Rook ? rookMagics[square.index()] : bishopMagics[square.index()];
+        std::uint8_t shift = piece == SlidingPiece::Rook ? rookMagicShifts[square.index()] : bishopMagicShifts[square.index()];
 
         Bitboard variation = 0ULL;
         do {
-            Bitboard attacks = piece == SlidingPiece::Rook ? get_rook_attacks_OTF(square, variation) : get_bishop_attacks_OTF(square, variation);
-            std::uint16_t magic_index = static_cast<std::uint16_t>((variation * magic) >> shift);
+            Bitboard attacks = piece == SlidingPiece::Rook ? getRookAttacksOTF(square, variation) : getBishopAttacksOTF(
+                    square, variation);
+            std::uint16_t magicIndex = static_cast<std::uint16_t>((variation * magic) >> shift);
             if (piece == SlidingPiece::Rook) {
-                RookAttacks[square.index()][magic_index] = attacks;
+                rookAttacks[square.index()][magicIndex] = attacks;
             } else {
-                BishopAttacks[square.index()][magic_index] = attacks;
+                bishopAttacks[square.index()][magicIndex] = attacks;
             }
             variation = (variation - mask) & mask; // Carry-Rippler trick
         } while (variation);
     }
 }
 
-Bitboard get_knight_attacks(Square square) {
-    return KnightAttacks[square.index()];
+Bitboard getKnightAttacks(Square square) {
+    return knightAttacks[square.index()];
 }
 
-Bitboard get_king_attacks(Square square) {
-    return KingAttacks[square.index()];
+Bitboard getKingAttacks(Square square) {
+    return kingAttacks[square.index()];
 }
 
-Bitboard get_pawn_attacks(Square square, Color color) {
-    return PawnAttacks[static_cast<std::uint8_t>(color)][square.index()];
+Bitboard getPawnAttacks(Square square, Color color) {
+    return pawnAttacks[static_cast<std::uint8_t>(color)][square.index()];
 }
 
-Bitboard get_rook_attacks(Square square, Bitboard occupied) {
-    Bitboard mask = RookMasks[square.index()];
-    Bitboard magic = RookMagics[square.index()];
-    std::uint8_t shift = RookMagicShifts[square.index()];
-    std::uint16_t magic_index = static_cast<std::uint16_t>(((occupied & mask) * magic) >> shift);
-    return RookAttacks[square.index()][magic_index];
+Bitboard getRookAttacks(Square square, Bitboard occupied) {
+    Bitboard mask = rookMasks[square.index()];
+    Bitboard magic = rookMagics[square.index()];
+    std::uint8_t shift = rookMagicShifts[square.index()];
+    std::uint16_t magicIndex = static_cast<std::uint16_t>(((occupied & mask) * magic) >> shift);
+    return rookAttacks[square.index()][magicIndex];
 }
 
-Bitboard get_bishop_attacks(Square square, Bitboard occupied) {
-    Bitboard mask = BishopMasks[square.index()];
-    Bitboard magic = BishopMagics[square.index()];
-    std::uint8_t shift = BishopMagicShifts[square.index()];
-    std::uint16_t magic_index = static_cast<std::uint16_t>(((occupied & mask) * magic) >> shift);
-    return BishopAttacks[square.index()][magic_index];
+Bitboard getBishopAttacks(Square square, Bitboard occupied) {
+    Bitboard mask = bishopMasks[square.index()];
+    Bitboard magic = bishopMagics[square.index()];
+    std::uint8_t shift = bishopMagicShifts[square.index()];
+    std::uint16_t magicIndex = static_cast<std::uint16_t>(((occupied & mask) * magic) >> shift);
+    return bishopAttacks[square.index()][magicIndex];
 }
 
-Bitboard get_queen_attacks(Square square, Bitboard occupied) {
-    return get_rook_attacks(square, occupied) | get_bishop_attacks(square, occupied);
+Bitboard getQueenAttacks(Square square, Bitboard occupied) {
+    return getRookAttacks(square, occupied) | getBishopAttacks(square, occupied);
 }

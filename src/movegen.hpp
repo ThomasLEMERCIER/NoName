@@ -1,11 +1,11 @@
 #pragma once
 
-#include "movelist.hpp"
-#include "position.hpp"
-#include "color.hpp"
-#include "piece.hpp"
-#include "square.hpp"
 #include "attacks.hpp"
+#include "color.hpp"
+#include "movelist.hpp"
+#include "piece.hpp"
+#include "position.hpp"
+#include "square.hpp"
 
 enum class MoveType {
     AllMoves,
@@ -13,139 +13,148 @@ enum class MoveType {
     QuietMoves,
 };
 
-template <MoveType move_type, Color color>
-void generate_pawn_moves(MoveList& move_list, const Position& position) {
+template <MoveType moveType, Color color>
+void generatePawnMoves(MoveList& moveList, const Position& position) {
     constexpr Color opponent = ~color;
     constexpr Direction forward = (color == Color::White) ? Direction::North : Direction::South;
     constexpr Direction backward = (color == Color::White) ? Direction::South : Direction::North;
-    constexpr Bitboard promotion_rank = (color == Color::White) ? Bitboard::RankBitboard(6) : Bitboard::RankBitboard(1);
-    constexpr Bitboard double_push_rank = (color == Color::White) ? Bitboard::RankBitboard(2) : Bitboard::RankBitboard(5);
+    constexpr Bitboard promotionRank = (color == Color::White) ? Bitboard::RankBitboard(6) : Bitboard::RankBitboard(1);
+    constexpr Bitboard doublePushRank = (color == Color::White) ? Bitboard::RankBitboard(2) : Bitboard::RankBitboard(5);
     constexpr Piece pawn = (color == Color::White) ? Piece::WhitePawn : Piece::BlackPawn;
 
-    Bitboard pawns = position.get_pieces<pawn>();
-    Bitboard pawns_on_promotion_rank = pawns & promotion_rank;
-    Bitboard pawns_not_on_promotion_rank = pawns & ~promotion_rank;
+    Bitboard pawns = position.getPieces<pawn>();
+    Bitboard pawnsOnPromotionRank = pawns & promotionRank;
+    Bitboard pawnsNotOnPromotionRank = pawns & ~promotionRank;
 
-    Bitboard empty_squares = ~position.occupied;
-    Bitboard opponent_pieces = position.get_occupied<opponent>();
+    Bitboard emptySquares = ~position.occupied;
+    Bitboard opponentPieces = position.getOccupied<opponent>();
 
-    Bitboard single_pushes = pawns_not_on_promotion_rank.shift<forward>() & ~position.occupied;
-    Bitboard double_pushes = (single_pushes & double_push_rank).shift<forward>() & empty_squares;
+    Bitboard singlePushes = pawnsNotOnPromotionRank.shift<forward>() & ~position.occupied;
+    Bitboard doublePushes = (singlePushes & doublePushRank).shift<forward>() & emptySquares;
 
-    while (single_pushes) {
-        Square to = single_pushes.PopLsb();
+    while (singlePushes) {
+        Square to = singlePushes.popLsb();
         Square from = to.shift<backward>();
-        move_list.add_move(from, to, pawn);
+        moveList.addMove(from, to, pawn);
     }
 
-    while (double_pushes) {
-        Square to = double_pushes.PopLsb();
+    while (doublePushes) {
+        Square to = doublePushes.popLsb();
         Square from = to.template shift<backward>().template shift<backward>();
-        move_list.add_double_push(from, to, pawn);
+        moveList.addDoublePush(from, to, pawn);
     }
 
-    if (pawns_on_promotion_rank) {
-        Bitboard captures_right = pawns_on_promotion_rank.template shift<forward>().template shift<Direction::East>() & opponent_pieces;
-        Bitboard captures_left = pawns_on_promotion_rank.template shift<forward>(). template shift<Direction::West>() & opponent_pieces;
-        Bitboard non_captures = pawns_on_promotion_rank.shift<forward>() & empty_squares;
+    if (pawnsOnPromotionRank) {
+        Bitboard capturesRight = pawnsOnPromotionRank.template shift<forward>().template shift<Direction::East>() & opponentPieces;
+        Bitboard capturesLeft = pawnsOnPromotionRank.template shift<forward>(). template shift<Direction::West>() & opponentPieces;
+        Bitboard nonCaptures = pawnsOnPromotionRank.shift<forward>() & emptySquares;
 
-        while (captures_right) {
-            Square to = captures_right.PopLsb();
+        while (capturesRight) {
+            Square to = capturesRight.popLsb();
             Square from = to.template shift<backward>().template shift<Direction::West>();
-            move_list.add_promotion(from, to, pawn, true, color);
+            moveList.addPromotion(from, to, pawn, true, color);
         }
 
-        while (captures_left) {
-            Square to = captures_left.PopLsb();
+        while (capturesLeft) {
+            Square to = capturesLeft.popLsb();
             Square from = to.template shift<backward>().template shift<Direction::East>();
-            move_list.add_promotion(from, to, pawn, true, color);
+            moveList.addPromotion(from, to, pawn, true, color);
         }
 
-        while (non_captures) {
-            Square to = non_captures.PopLsb();
+        while (nonCaptures) {
+            Square to = nonCaptures.popLsb();
             Square from = to.shift<backward>();
-            move_list.add_promotion(from, to, pawn, color);
+            moveList.addPromotion(from, to, pawn, color);
         }
     }
 
-    Bitboard captures_right = pawns_not_on_promotion_rank.template shift<forward>().template shift<Direction::East>() & opponent_pieces;
-    Bitboard captures_left = pawns_not_on_promotion_rank.template shift<forward>().template shift<Direction::West>() & opponent_pieces;
+    Bitboard capturesRight = pawnsNotOnPromotionRank.template shift<forward>().template shift<Direction::East>() & opponentPieces;
+    Bitboard capturesLeft = pawnsNotOnPromotionRank.template shift<forward>().template shift<Direction::West>() & opponentPieces;
 
-    while (captures_right) {
-        Square to = captures_right.PopLsb();
+    while (capturesRight) {
+        Square to = capturesRight.popLsb();
         Square from = to.template shift<backward>().template shift<Direction::West>();
-        move_list.add_move(from, to, pawn, true);
+        moveList.addMove(from, to, pawn, true);
     }
 
-    while (captures_left) {
-        Square to = captures_left.PopLsb();
+    while (capturesLeft) {
+        Square to = capturesLeft.popLsb();
         Square from = to.template shift<backward>().template shift<Direction::East>();
-        move_list.add_move(from, to, pawn, true);
+        moveList.addMove(from, to, pawn, true);
     }
 
-    if (position.en_passant_square != Square::None) {
-        Bitboard pawn_able_to_capture = get_pawn_attacks(position.en_passant_square, opponent) & pawns_not_on_promotion_rank;
+    if (position.enPassantSquare != Square::None) {
+        Bitboard pawnAbleToCapture =
+                getPawnAttacks(position.enPassantSquare, opponent) & pawnsNotOnPromotionRank;
 
-        while (pawn_able_to_capture) {
-            Square from = pawn_able_to_capture.PopLsb();
-            move_list.add_en_passant(from, position.en_passant_square, pawn);
+        while (pawnAbleToCapture) {
+            Square from = pawnAbleToCapture.popLsb();
+            moveList.addEnPassant(from, position.enPassantSquare, pawn);
         }
     }
 }
 
-template <MoveType move_type, Color color>
-void generate_castling_moves(MoveList& move_list, const Position& position) {
+template <MoveType moveType, Color color>
+void generateCastlingMoves(MoveList& moveList, const Position& position) {
 
     constexpr Color opponent = ~color;
     if constexpr (color == Color::White) {
-        if ((position.castling_rights & CastlingRight::WhiteKingSide) != CastlingRight::None) {
+        if ((position.castlingRights & CastlingRight::WhiteKingSide) != CastlingRight::None) {
             const Square sq1 = Square::F1;
             const Square sq2 = Square::G1;
             const Bitboard between = Bitboard(sq1) | Bitboard(sq2);
             const Bitboard occupiedSquares = position.occupied & between;
             if (occupiedSquares == 0ULL) {
-                if (!position.is_square_attacked_by<opponent>(Square::E1) && !position.is_square_attacked_by<opponent>(Square::F1) && !position.is_square_attacked_by<opponent>(Square::G1)) {
-                    move_list.add_castling(Square::E1, Square::G1, Piece::WhiteKing);
+                if (!position.isSquareAttackedBy<opponent>(Square::E1) && !position.isSquareAttackedBy<opponent>(
+                        Square::F1) && !position.isSquareAttackedBy<opponent>(
+                        Square::G1)) {
+                    moveList.addCastling(Square::E1, Square::G1, Piece::WhiteKing);
                 }
             }
         }
 
-        if ((position.castling_rights & CastlingRight::WhiteQueenSide) != CastlingRight::None) {
+        if ((position.castlingRights & CastlingRight::WhiteQueenSide) != CastlingRight::None) {
             const Square sq1 = Square::B1;
             const Square sq2 = Square::C1;
             const Square sq3 = Square::D1;
             const Bitboard between = Bitboard(sq1) | Bitboard(sq2) | Bitboard(sq3);
             const Bitboard occupiedSquares = position.occupied & between;
             if (occupiedSquares == 0ULL) {
-                if (!position.is_square_attacked_by<opponent>(Square::E1) && !position.is_square_attacked_by<opponent>(Square::D1) && !position.is_square_attacked_by<opponent>(Square::C1)) {
-                    move_list.add_castling(Square::E1, Square::C1, Piece::WhiteKing);
+                if (!position.isSquareAttackedBy<opponent>(Square::E1) && !position.isSquareAttackedBy<opponent>(
+                        Square::D1) && !position.isSquareAttackedBy<opponent>(
+                        Square::C1)) {
+                    moveList.addCastling(Square::E1, Square::C1, Piece::WhiteKing);
                 }
             }
 
         }
     }
     else {
-        if ((position.castling_rights & CastlingRight::BlackKingSide) != CastlingRight::None) {
+        if ((position.castlingRights & CastlingRight::BlackKingSide) != CastlingRight::None) {
             const Square sq1 = Square::F8;
             const Square sq2 = Square::G8;
             const Bitboard between = Bitboard(sq1) | Bitboard(sq2);
             const Bitboard occupiedSquares = position.occupied & between;
             if (occupiedSquares == 0ULL) {
-                if (!position.is_square_attacked_by<opponent>(Square::E8) && !position.is_square_attacked_by<opponent>(Square::F8) && !position.is_square_attacked_by<opponent>(Square::G8)) {
-                    move_list.add_castling(Square::E8, Square::G8, Piece::BlackKing);
+                if (!position.isSquareAttackedBy<opponent>(Square::E8) && !position.isSquareAttackedBy<opponent>(
+                        Square::F8) && !position.isSquareAttackedBy<opponent>(
+                        Square::G8)) {
+                    moveList.addCastling(Square::E8, Square::G8, Piece::BlackKing);
                 }
             }
         }
 
-        if ((position.castling_rights & CastlingRight::BlackQueenSide) != CastlingRight::None) {
+        if ((position.castlingRights & CastlingRight::BlackQueenSide) != CastlingRight::None) {
             const Square sq1 = Square::B8;
             const Square sq2 = Square::C8;
             const Square sq3 = Square::D8;
             const Bitboard between = Bitboard(sq1) | Bitboard(sq2) | Bitboard(sq3);
             const Bitboard occupiedSquares = position.occupied & between;
             if (occupiedSquares == 0ULL) {
-                if (!position.is_square_attacked_by<opponent>(Square::E8) && !position.is_square_attacked_by<opponent>(Square::D8) && !position.is_square_attacked_by<opponent>(Square::C8)) {
-                    move_list.add_castling(Square::E8, Square::C8, Piece::BlackKing);
+                if (!position.isSquareAttackedBy<opponent>(Square::E8) && !position.isSquareAttackedBy<opponent>(
+                        Square::D8) && !position.isSquareAttackedBy<opponent>(
+                        Square::C8)) {
+                    moveList.addCastling(Square::E8, Square::C8, Piece::BlackKing);
                 }
             }
 
@@ -153,42 +162,42 @@ void generate_castling_moves(MoveList& move_list, const Position& position) {
     }
 }
 
-template <MoveType move_type, Piece piece>
-void generate_piece_moves(MoveList& move_list, const Position& position) {
-    constexpr Color color = get_piece_color(piece);
-    constexpr PieceType piece_type = get_piece_type(piece);
+template <MoveType moveType, Piece piece>
+void generatePieceMoves(MoveList& moveList, const Position& position) {
+    constexpr Color color = getPieceColor(piece);
+    constexpr PieceType pieceType = getPieceType(piece);
 
-    Bitboard pieces = position.get_pieces<piece>();
+    Bitboard pieces = position.getPieces<piece>();
     while (pieces) {
-        Square from = pieces.PopLsb();
-        Bitboard attacks = get_attacks<piece_type, color>(from, position.occupied);
-        Bitboard targets = attacks & ~position.get_occupied<color>();
+        Square from = pieces.popLsb();
+        Bitboard attacks = getAttacks<pieceType, color>(from, position.occupied);
+        Bitboard targets = attacks & ~position.getOccupied<color>();
         while (targets) {
-            Square to = targets.PopLsb();
-            move_list.add_move(from, to, piece, static_cast<bool>(position.occupied & to));
+            Square to = targets.popLsb();
+            moveList.addMove(from, to, piece, static_cast<bool>(position.occupied & to));
         }
     }
 }
 
-template <MoveType move_type>
-void generate_moves(MoveList& move_list, const Position& position) {
+template <MoveType moveType>
+void generateMoves(MoveList& moveList, const Position& position) {
 
-    if (position.side_to_move == Color::White) {
-        generate_pawn_moves<move_type, Color::White>(move_list, position);
-        generate_castling_moves<move_type, Color::White>(move_list, position);
-        generate_piece_moves<move_type, Piece::WhiteKnight>(move_list, position);
-        generate_piece_moves<move_type, Piece::WhiteBishop>(move_list, position);
-        generate_piece_moves<move_type, Piece::WhiteRook>(move_list, position);
-        generate_piece_moves<move_type, Piece::WhiteQueen>(move_list, position);
-        generate_piece_moves<move_type, Piece::WhiteKing>(move_list, position);
+    if (position.sideToMove == Color::White) {
+        generatePawnMoves<moveType, Color::White>(moveList, position);
+        generateCastlingMoves<moveType, Color::White>(moveList, position);
+        generatePieceMoves<moveType, Piece::WhiteKnight>(moveList, position);
+        generatePieceMoves<moveType, Piece::WhiteBishop>(moveList, position);
+        generatePieceMoves<moveType, Piece::WhiteRook>(moveList, position);
+        generatePieceMoves<moveType, Piece::WhiteQueen>(moveList, position);
+        generatePieceMoves<moveType, Piece::WhiteKing>(moveList, position);
     }
     else {
-        generate_pawn_moves<move_type, Color::Black>(move_list, position);
-        generate_castling_moves<move_type, Color::Black>(move_list, position);
-        generate_piece_moves<move_type, Piece::BlackKnight>(move_list, position);
-        generate_piece_moves<move_type, Piece::BlackBishop>(move_list, position);
-        generate_piece_moves<move_type, Piece::BlackRook>(move_list, position);
-        generate_piece_moves<move_type, Piece::BlackQueen>(move_list, position);
-        generate_piece_moves<move_type, Piece::BlackKing>(move_list, position);
+        generatePawnMoves<moveType, Color::Black>(moveList, position);
+        generateCastlingMoves<moveType, Color::Black>(moveList, position);
+        generatePieceMoves<moveType, Piece::BlackKnight>(moveList, position);
+        generatePieceMoves<moveType, Piece::BlackBishop>(moveList, position);
+        generatePieceMoves<moveType, Piece::BlackRook>(moveList, position);
+        generatePieceMoves<moveType, Piece::BlackQueen>(moveList, position);
+        generatePieceMoves<moveType, Piece::BlackKing>(moveList, position);
     }
 }

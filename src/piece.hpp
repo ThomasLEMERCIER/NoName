@@ -1,10 +1,10 @@
 #pragma once
 
+#include "color.hpp"
+
 #include <cstdint>
 #include <string_view>
 #include <unordered_map>
-
-#include "color.hpp"
 
 enum class PieceType : std::uint8_t {
     Pawn,
@@ -31,8 +31,8 @@ enum class Piece : std::uint8_t {
     None = 12
 };
 
-constexpr std::string_view PieceNames[13] = { "P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k", "." };
-const std::unordered_map<char, Piece> PieceChars = {
+constexpr std::string_view pieceNames[13] = {"P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k", "." };
+const std::unordered_map<char, Piece> pieceChars = {
     { 'P', Piece::WhitePawn },
     { 'N', Piece::WhiteKnight },
     { 'B', Piece::WhiteBishop },
@@ -48,10 +48,10 @@ const std::unordered_map<char, Piece> PieceChars = {
     { '.', Piece::None }
 };
 
-constexpr PieceType get_piece_type(const Piece piece) {
+constexpr PieceType getPieceType(const Piece piece) {
     return static_cast<PieceType>(static_cast<std::uint8_t>(piece) % 6);
 }
 
-constexpr Color get_piece_color(const Piece piece) {
+constexpr Color getPieceColor(const Piece piece) {
     return static_cast<Color>(static_cast<std::uint8_t>(piece) / 6);
 }

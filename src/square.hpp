@@ -16,11 +16,7 @@ enum class Direction {
 
 class Square {
 public:
-    static constexpr int NumberSquares = 64;
-    static constexpr int NumberRanks = 8;
-    static constexpr int NumberFiles = 8;
-
-    static constexpr std::string_view SquareNames[Square::NumberSquares + 1] = {
+    static constexpr std::string_view squareNames[64 + 1] = {
         "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
         "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
         "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
@@ -74,23 +70,23 @@ public:
     constexpr bool operator!=(const Square& rhs) const { return value != rhs.value; }
 
     friend std::ostream& operator<<(std::ostream& output, const Square& sq) {
-        output << SquareNames[sq.value];
+        output << squareNames[sq.value];
         return output;
     }
 };
 
-constexpr Square RookFromCastling(Square king_to) {
-    if (king_to == Square::G1) { return Square::H1; }
-    if (king_to == Square::C1) { return Square::A1; }
-    if (king_to == Square::G8) { return Square::H8; }
-    if (king_to == Square::C8) { return Square::A8; }
+constexpr Square rookFromCastling(Square kingTo) {
+    if (kingTo == Square::G1) { return Square::H1; }
+    if (kingTo == Square::C1) { return Square::A1; }
+    if (kingTo == Square::G8) { return Square::H8; }
+    if (kingTo == Square::C8) { return Square::A8; }
     return Square::None;
 }
 
-constexpr Square RookToCastling(Square king_to) {
-    if (king_to == Square::G1) { return Square::F1; }
-    if (king_to == Square::C1) { return Square::D1; }
-    if (king_to == Square::G8) { return Square::F8; }
-    if (king_to == Square::C8) { return Square::D8; }
+constexpr Square rookToCastling(Square kingTo) {
+    if (kingTo == Square::G1) { return Square::F1; }
+    if (kingTo == Square::C1) { return Square::D1; }
+    if (kingTo == Square::G8) { return Square::F8; }
+    if (kingTo == Square::C8) { return Square::D8; }
     return Square::None;
 }
