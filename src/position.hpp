@@ -6,7 +6,6 @@
 #include "piece.hpp"
 #include "square.hpp"
 
-#include <array>
 #include <string>
 
 enum class CastlingRight : std::uint8_t {
@@ -76,7 +75,9 @@ public:
     Square enPassantSquare;         // en passant square
     CastlingRight castlingRights;    // castling rights (encoded as bits) 0001 = white king side, 0010 = white queen side, 0100 = black king side, 1000 = black queen side
 
-    constexpr Position() : sideToMove{Color::White}, enPassantSquare{Square::None}, castlingRights{CastlingRight::None} {};
+    std::uint64_t hash;
+
+    constexpr Position() : sideToMove{Color::White}, enPassantSquare{Square::None}, castlingRights{CastlingRight::None}, hash{} {};
     void loadFromFen(const std::string& fen);                                     // load position from FEN string
 
     void setPiece(const Color color, const PieceType piece, const Square square);  // set piece at given square
@@ -101,7 +102,8 @@ public:
 
     template<Color color>
     bool isSquareAttackedBy(const Square square) const;                           // check if square is attacked by given color
-    bool isInCheck(const Color color) const;                                       // check if given color is in check
+    bool isInCheck(const Color color) const;                                      // check if given color is in check
 
+    std::uint64_t computeHash();
     friend std::ostream& operator<<(std::ostream& output, const Position& pos);     // output operator
 };

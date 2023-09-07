@@ -55,3 +55,7 @@ constexpr PieceType getPieceType(const Piece piece) {
 constexpr Color getPieceColor(const Piece piece) {
     return static_cast<Color>(static_cast<std::uint8_t>(piece) / 6);
 }
+
+constexpr Piece getPiece(const PieceType pieceType, Color color) {
+    return static_cast<Piece>(static_cast<std::uint8_t>(pieceType) + 6 * static_cast<std::uint8_t>(color));
+}

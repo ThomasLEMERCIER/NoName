@@ -1,18 +1,16 @@
 
 #include "attacks.hpp"
-#include "perft.hpp"
-#include "position.hpp"
+#include "universalchessinterface.hpp"
+#include "zobrist.hpp"
 
-#include <iostream>
 
-int main()
+int main(int argc, char **argv)
 {
     initAttacks();
+    initZobristKeys();
 
-    Position pos;
-    pos.loadFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-    std::cout << pos << std::endl;
-    perft(pos, 5);
+    UniversalChessInterface uci;
+    uci.loop(argc, argv);
 
     return 0;
 }

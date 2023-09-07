@@ -1,6 +1,7 @@
 #include "position.hpp"
 
 #include "attacks.hpp"
+#include "zobrist.hpp"
 
 #include <sstream>
 
@@ -15,8 +16,6 @@ void Position::loadFromFen(const std::string& fen) {
 
     fenStream >> std::noskipws;
     char token;
-
-
     std::uint8_t rank = 7, file = 0;
 
     while ((fenStream >> token) && token != ' ') {
@@ -63,6 +62,8 @@ void Position::loadFromFen(const std::string& fen) {
         rank = (token - '1');
         enPassantSquare = Square {rank, file };
     }
+
+    hash = computeHash();
 }
 
 void Position::setPiece(const Color color, const PieceType piece, const Square square) {
@@ -72,6 +73,7 @@ void Position::setPiece(const Color color, const PieceType piece, const Square s
     side[piece] |= mask;
     side.occupied |= mask;
     occupied |= mask;
+    hash ^= getPieceSquareHash(color, piece, square);
 }
 
 void Position::removePiece(const Color color, const PieceType piece, const Square square) {
@@ -81,6 +83,7 @@ void Position::removePiece(const Color color, const PieceType piece, const Squar
     side[piece] ^= mask;
     side.occupied ^= mask;
     occupied ^= mask;
+    hash ^= getPieceSquareHash(color, piece, square);
 }
 
 Piece Position::pieceAt(const Square square) const {
@@ -167,12 +170,14 @@ bool Position::makeMove(const Move move) {
     setPiece(sideToMove, pieceType, to);
 
     if (enPassantSquare != Square::None) {
+        hash ^= enPassantFileZobristHash[enPassantSquare.file()];
         enPassantSquare = Square::None;
     }
 
     if (pieceType == PieceType::Pawn) {
         if (doublePush) {
             enPassantSquare = Square(enpassantRank, to.file());
+            hash ^= enPassantFileZobristHash[enPassantSquare.file()];
         }
         else if (promotionPiece != static_cast<Piece>(0)) {
             removePiece(sideToMove, PieceType::Pawn, to);
@@ -180,15 +185,46 @@ bool Position::makeMove(const Move move) {
         }
     }
 
-    // if (castlingRights != CastlingRight::None) {
+    if (castlingRights != CastlingRight::None) {
+        hash ^= castlingRightZobristHash[static_cast<std::uint8_t>(castlingRights)];
         castlingRights &= castlingRightUpdate[from.index()];
-    castlingRights &= castlingRightUpdate[to.index()];
-    // }
+        castlingRights &= castlingRightUpdate[to.index()];
+        hash ^= castlingRightZobristHash[static_cast<std::uint8_t>(castlingRights)];
+    }
 
     Color prevSideToMove = sideToMove;
     sideToMove = ~sideToMove;
+    hash ^= colorZobristHash;
 
     return !isInCheck(prevSideToMove);
+}
+
+std::uint64_t Position::computeHash() {
+    std::uint64_t hashValue = (sideToMove == Color::Black) ? colorZobristHash : 0ULL;
+
+    for (std::uint8_t pieceType = 0; pieceType < 6; pieceType++) {
+        Bitboard pieceBitboard = white[static_cast<PieceType>(pieceType)];
+        while (pieceBitboard) {
+            Square square = pieceBitboard.popLsb();
+            hashValue ^= getPieceSquareHash(Color::White, static_cast<PieceType>(pieceType), square);
+        }
+    }
+
+    for (std::uint8_t pieceType = 0; pieceType < 6; pieceType++) {
+        Bitboard pieceBitboard = black[static_cast<PieceType>(pieceType)];
+        while (pieceBitboard) {
+            Square square = pieceBitboard.popLsb();
+            hashValue ^= getPieceSquareHash(Color::Black, static_cast<PieceType>(pieceType), square);
+        }
+    }
+
+    if (enPassantSquare != Square::None) {
+        hashValue ^= enPassantFileZobristHash[enPassantSquare.file()];
+    }
+
+    hashValue ^= castlingRightZobristHash[static_cast<std::uint8_t>(castlingRights)];
+
+    return hashValue;
 }
 
 std::ostream& operator<<(std::ostream& output, const Position& pos) {
@@ -212,7 +248,9 @@ std::ostream& operator<<(std::ostream& output, const Position& pos) {
     if ((pos.castlingRights & CastlingRight::WhiteQueenSide) != CastlingRight::None)   { output << "Q"; }
     if ((pos.castlingRights & CastlingRight::BlackKingSide) != CastlingRight::None)    { output << "k"; }
     if ((pos.castlingRights & CastlingRight::BlackQueenSide) != CastlingRight::None)   { output << "q"; }
+    if (pos.castlingRights == CastlingRight::None)   { output << " None"; }
     output << "\n    En passant square: " << pos.enPassantSquare << std::endl;
+    output << "\n\n    Hash Value: 0x" << std::hex << pos.hash << std::dec << std::endl;
 
     // output << "\n\n    White occupied: \n" << pos.white.occupied;
     // output << "\n\n    Black occupied: \n" << pos.black.occupied;
@@ -220,3 +258,4 @@ std::ostream& operator<<(std::ostream& output, const Position& pos) {
 
     return output;
 }
+
