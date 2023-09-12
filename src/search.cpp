@@ -20,13 +20,13 @@ void Search::startSearch(const Position& position, const SearchLimits& searchLim
 
 void Search::searchInternal(ThreadData& threadData) {
     NodeData &rootNode = threadData.searchStack[0];
-    Move bestMoveSoFar;
+    rootNode.ply = 0;
 
+    Move bestMoveSoFar;
     for (std::uint8_t currentDepth = 1; currentDepth <= threadData.searchLimits.depthLimit; currentDepth++) {
         rootNode.alpha = -infValue;
         rootNode.beta = +infValue;
         rootNode.depth = currentDepth;
-        rootNode.ply = 0;
 
         rootNode.pvLine.score = negamax(threadData, &rootNode, threadData.searchStats);
         if (searchStop) break;
@@ -99,6 +99,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     Position& currentPosition = nodeData->position;
     PvLine& pvLine = nodeData->pvLine;
     Score oldAlpha = nodeData->alpha;
+    nodeData->pvLine.pvLength = 0;
 
     searchStats.negamaxNodeCounter++;
 
