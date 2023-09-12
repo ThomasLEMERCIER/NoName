@@ -8,7 +8,7 @@ SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.hpp)
 
 # Output executable
-EXECUTABLE = chess_engine.exe
+EXE = chess_engine.exe
 
 .PHONY: all clean
 
