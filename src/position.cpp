@@ -5,7 +5,7 @@
 
 #include <sstream>
 
-// forwards instantiation of template function
+// forward instantiation of template function
 template bool Position::isSquareAttackedBy<Color::White>(const Square square) const;
 template bool Position::isSquareAttackedBy<Color::Black>(const Square square) const;
 

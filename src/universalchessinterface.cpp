@@ -1,6 +1,7 @@
 #include "universalchessinterface.hpp"
 
 #include "bench.hpp"
+#include "evaluate.hpp"
 #include "movelist.hpp"
 #include "movegen.hpp"
 #include "perft.hpp"
@@ -182,6 +183,7 @@ void UniversalChessInterface::loop(int argc, char **argv) {
         else if (token == "go")         parseGo(ss);
         else if (token == "bench")      bench();
         else if (token == "perft")      parsePerft(ss);
+        else if (token == "eval")       std::cout << "Evaluation value: " << evaluate(position) << std::endl;
     }
 
     search.stopSearch();
