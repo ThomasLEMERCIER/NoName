@@ -8,14 +8,14 @@ SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.hpp)
 
 # Output executable
-EXE = chess_engine.exe
+EXE = chess_engine
 
 .PHONY: all clean
 
-all: $(EXECUTABLE)
+all: $(EXE)
 
-$(EXECUTABLE): $(SOURCES) $(HEADERS)
+$(EXE): $(SOURCES) $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(SOURCES)
 
 clean:
-	rm -f $(EXECUTABLE)
+	rm -f $(EXE)
