@@ -61,8 +61,9 @@ public:
     constexpr Square east() const { return Square { static_cast<uint8_t>(value + 1) }; }
     constexpr Square south() const { return Square { static_cast<uint8_t>(value - 8) }; }
     constexpr Square west() const { return Square { static_cast<uint8_t>(value - 1) }; }
-    
+
     constexpr std::uint8_t index() const { return value; }
+    constexpr std::uint8_t flipIndex() const { return value ^ 56; }
     constexpr std::uint8_t rank() const { return value / 8u; }
     constexpr std::uint8_t file() const { return value % 8u; }
 
