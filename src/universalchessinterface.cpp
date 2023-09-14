@@ -27,10 +27,10 @@ Move UniversalChessInterface::parseMove(std::string moveString) {
             Piece promotionPiece = move.getPromotionPiece();
 
             if (promotionPiece != static_cast<Piece>(0)) {
-                if ((promotionPiece ==  Piece::WhiteQueen || promotionPiece == Piece::BlackQueen) && moveString[4] == 'q') return move;
-                if ((promotionPiece ==  Piece::WhiteKnight || promotionPiece == Piece::BlackKnight) && moveString[4] == 'n') return move;
-                if ((promotionPiece ==  Piece::WhiteRook || promotionPiece == Piece::BlackRook) && moveString[4] == 'r') return move;
-                if ((promotionPiece ==  Piece::WhiteBishop || promotionPiece == Piece::BlackBishop) && moveString[4] == 'b') return move;
+                if ((promotionPiece ==  Piece::WhiteQueen || promotionPiece == Piece::BlackQueen) && (moveString[4] == 'q' || moveString[4] == 'Q')) return move;
+                if ((promotionPiece ==  Piece::WhiteKnight || promotionPiece == Piece::BlackKnight) && (moveString[4] == 'n' || moveString[4] == 'N')) return move;
+                if ((promotionPiece ==  Piece::WhiteRook || promotionPiece == Piece::BlackRook) && (moveString[4] == 'r' || moveString[4] == 'R')) return move;
+                if ((promotionPiece ==  Piece::WhiteBishop || promotionPiece == Piece::BlackBishop) && (moveString[4] == 'b' || moveString[4] == 'B')) return move;
                 continue;
             }
             return move;
