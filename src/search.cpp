@@ -99,6 +99,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     Position& currentPosition = nodeData->position;
     PvLine& pvLine = nodeData->pvLine;
     Score oldAlpha = nodeData->alpha;
+    nodeData->pvLine.pvLength = 0;
 
     searchStats.negamaxNodeCounter++;
 
