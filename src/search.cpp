@@ -3,15 +3,16 @@
 #include "evaluate.hpp"
 #include "movesorter.hpp"
 
-void Search::startSearch(const Position& position, const SearchLimits& searchLimits) {
+void Search::startSearch(const Game& game, const SearchLimits& searchLimits) {
     // stop any previous search
     stopSearch();
 
     // Setting thread data
     data.searchLimits = searchLimits;
+    data.game = &game;
     data.isMainThread = true;
     data.searchStats = {};
-    data.searchStack[0].position = position;
+    data.searchStack[0].position = game.getCurrentPosition();
 
     // launching search on thread
     searchStop = false;
@@ -99,9 +100,12 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     Position& currentPosition = nodeData->position;
     PvLine& pvLine = nodeData->pvLine;
     Score oldAlpha = nodeData->alpha;
-    nodeData->pvLine.pvLength = 0;
+    bool rootNode = nodeData->ply == 0;
 
+    nodeData->pvLine.pvLength = 0;
     searchStats.negamaxNodeCounter++;
+
+    if (!rootNode && (currentPosition.halfMoveCounter >= 100 || checkInsufficientMaterial(currentPosition) || isRepetition(nodeData, threadData.game))) return drawValue;
 
     if (nodeData->depth <= 0) return quiescenceNegamax(threadData, nodeData, searchStats);
 
@@ -134,6 +138,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         childNode.alpha = -beta;
         childNode.beta = -alpha;
         childNode.depth = nodeData->depth - depthReduction;
+        childNode.previousMove = outMove;
 
         Score score = -negamax(threadData, &childNode, searchStats);
 
@@ -209,6 +214,8 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
 
         childNode.alpha = -beta;
         childNode.beta = -alpha;
+        childNode.previousMove = outMove;
+
         Score score = -quiescenceNegamax(threadData, &childNode, searchStats);
 
         if (score > bestScore) {
@@ -227,3 +234,30 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     return bestScore;
 }
 
+bool Search::isRepetition(NodeData* nodeData, const Game* game) {
+    NodeData* previousNode = nodeData;
+    std::uint32_t plyCounter = 0;
+
+    const std::uint64_t targetHash = nodeData->position.hash;
+
+    // Check for repetition inside the current search
+    while (previousNode->ply > 0) {
+        // Irreversible moves
+        const Move& prevMove = previousNode->previousMove;
+        if (prevMove.isCapture() || (prevMove.getPiece() == getPiece(PieceType::Pawn, ~previousNode->position.sideToMove))) {
+            return false;
+        }
+
+        --previousNode;
+        ++plyCounter;
+
+        if (plyCounter % 2 == 0) {
+            if (previousNode->position.hash == targetHash) {
+                return true;
+            }
+        }
+    }
+
+    // Check for repetition outside the current search
+    return game->checkRepetition(targetHash);
+}

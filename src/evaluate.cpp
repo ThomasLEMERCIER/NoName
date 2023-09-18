@@ -85,3 +85,31 @@ Score evaluateKing(const Position &position) {
 
     return score;
 }
+
+bool checkInsufficientMaterial(const Position &position) {
+    Bitboard pawnRookQueenBitboard =
+            position.white.pawns | position.white.rooks | position.white.queens |
+            position.black.pawns | position.black.rooks | position.black.queens;
+
+    if (pawnRookQueenBitboard) return false;
+
+    if (position.white.bishops == 0 && position.black.bishops == 0) {
+        // knight & king vs king
+        if ((position.white.knights == 0 && position.black.knights.count() < 2) ||
+            (position.black.knights == 0 && position.white.knights.count() <2)) return true;
+    }
+
+    if (position.white.knights == 0 && position.black.knights == 0) {
+        // bishop & king vs king
+        if ((position.white.bishops == 0 && position.black.bishops.count() < 2) ||
+            (position.black.bishops == 0 && position.white.bishops.count() < 2)) return true;
+        // bishop & king vs bishop & king on same color
+        if (position.white.bishops.count() == 1 && position.black.bishops.count() == 1) {
+            Bitboard lightSquareBishops = (position.white.bishops | position.black.bishops) & Bitboard::LightSquares();
+            Bitboard darkSquareBishops = (position.white.bishops | position.black.bishops) & Bitboard::DarkSquares();
+            if (darkSquareBishops == 0 || lightSquareBishops == 0) return true;
+        }
+    }
+
+    return false;
+}

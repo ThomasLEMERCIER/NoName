@@ -15,7 +15,7 @@
 
 Move UniversalChessInterface::parseMove(std::string moveString) {
     MoveList moveList;
-    generateMoves<MoveType::AllMoves>(moveList, position);
+    generateMoves<MoveType::AllMoves>(moveList, game.getCurrentPosition());
 
     // parse squares
     Square sourceSquare {static_cast<uint8_t>((moveString[1] - '1')), static_cast<uint8_t>((moveString[0] - 'a'))};
@@ -42,6 +42,8 @@ Move UniversalChessInterface::parseMove(std::string moveString) {
 }
 
 void UniversalChessInterface::parsePosition(std::istringstream &ss) {
+    game.reset();
+
     std::string token, fen;
     ss >> token;
 
@@ -58,19 +60,21 @@ void UniversalChessInterface::parsePosition(std::istringstream &ss) {
         return;
     }
 
+    Position position;
     position.loadFromFen(fen);
+    game.recordPosition(position);
 
     if (token == "moves") {
         Move move;
         while (ss >> token && (move = parseMove(token)).isValid()) {
             position.makeMove(move);
+            game.recordPosition(position);
         }
     }
-    positionSet = true;
 }
 
 void UniversalChessInterface::parseGo(std::istringstream &ss) {
-    if (!positionSet) {
+    if (!game.isValid()) {
         std::cout << "info string error: position not set" << std::endl;
         return;
     }
@@ -101,19 +105,20 @@ void UniversalChessInterface::parseGo(std::istringstream &ss) {
     searchLimits.searchTimeStart = getTime();
 
     {
+        Color sideToMove = game.getSideToMove();
         TimeManagerInitData timeManagerInitData {};
         timeManagerInitData.movesToGo = movesToGo;
-        timeManagerInitData.remainingTime = (position.sideToMove == Color::White) ? whiteTime : blackTime;
-        timeManagerInitData.theirRemainingTime = (position.sideToMove == Color::White) ? blackTime : whiteTime;
-        timeManagerInitData.timeIncrement = (position.sideToMove == Color::White) ? whiteIncrement : blackIncrement;
-        timeManagerInitData.theirTimeIncrement = (position.sideToMove == Color::White) ? blackIncrement : whiteIncrement;
+        timeManagerInitData.remainingTime = (sideToMove == Color::White) ? whiteTime : blackTime;
+        timeManagerInitData.theirRemainingTime = (sideToMove == Color::White) ? blackTime : whiteTime;
+        timeManagerInitData.timeIncrement = (sideToMove == Color::White) ? whiteIncrement : blackIncrement;
+        timeManagerInitData.theirTimeIncrement = (sideToMove == Color::White) ? blackIncrement : whiteIncrement;
         timeManagerInitData.timeMove = timePerMove;
         computeTimeLimits(timeManagerInitData, searchLimits);
     }
 
     std::cout << "Search Limits: Depth: " << static_cast<int>(searchLimits.depthLimit) << " Time Limit: " << searchLimits.timeLimit << " Ref Start Time: " << searchLimits.searchTimeStart << std::endl;
 
-    search.startSearch(position, searchLimits);
+    search.startSearch(game, searchLimits);
 }
 
 void UniversalChessInterface::parsePerft(std::istringstream &ss) {
@@ -124,7 +129,7 @@ void UniversalChessInterface::parsePerft(std::istringstream &ss) {
         if (token == "depth") { ss >> depth; }
     }
 
-    perft(position, depth);
+    perft(game.getCurrentPosition(), depth);
 }
 
 void UniversalChessInterface::bench() {
@@ -139,14 +144,19 @@ void UniversalChessInterface::bench() {
     for (const auto& benchFen : benchFens) {
         std::cout << "Current position fen: " << benchFen << std::endl;
 
+        Position position;
         position.loadFromFen(benchFen);
+
+        game.reset();
+        game.recordPosition(position);
 
         ThreadData threadData;
         threadData.searchLimits = searchLimits;
+        threadData.game = &game;
         threadData.isMainThread = true;
         threadData.searchStack = {};
         threadData.searchStats = {};
-        threadData.searchStack[0].position = position;
+        threadData.searchStack[0].position = game.getCurrentPosition();
 
         search.searchInternal(threadData);
         totalNodes += threadData.searchStats.quiescenceNodeCounter + threadData.searchStats.negamaxNodeCounter;
@@ -183,7 +193,7 @@ void UniversalChessInterface::loop(int argc, char **argv) {
         else if (token == "go")         parseGo(ss);
         else if (token == "bench")      bench();
         else if (token == "perft")      parsePerft(ss);
-        else if (token == "eval")       std::cout << "Evaluation value: " << evaluate(position) << std::endl;
+        else if (token == "eval")       std::cout << "Evaluation value: " << evaluate(game.getCurrentPosition()) << std::endl;
     }
 
     search.stopSearch();

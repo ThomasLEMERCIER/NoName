@@ -74,10 +74,11 @@ public:
     Color sideToMove;               // side to move
     Square enPassantSquare;         // en passant square
     CastlingRight castlingRights;    // castling rights (encoded as bits) 0001 = white king side, 0010 = white queen side, 0100 = black king side, 1000 = black queen side
+    std::uint16_t halfMoveCounter;
 
     std::uint64_t hash;
 
-    constexpr Position() : sideToMove{Color::White}, enPassantSquare{Square::None}, castlingRights{CastlingRight::None}, hash{} {};
+    constexpr Position() : sideToMove{Color::White}, enPassantSquare{Square::None}, castlingRights{CastlingRight::None}, halfMoveCounter{}, hash{} {};
     void loadFromFen(const std::string& fen);                                     // load position from FEN string
 
     void setPiece(const Color color, const PieceType piece, const Square square);  // set piece at given square

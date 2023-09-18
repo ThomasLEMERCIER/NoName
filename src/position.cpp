@@ -63,6 +63,16 @@ void Position::loadFromFen(const std::string& fen) {
         enPassantSquare = Square {rank, file };
     }
 
+    fenStream >> token;
+    std::string halfMoveCounterString;
+    while ((fenStream >> token) && token != ' ') {
+        halfMoveCounterString += token;
+    }
+    if (!halfMoveCounterString.empty())
+        halfMoveCounter = std::stoi(halfMoveCounterString);
+    else
+        halfMoveCounter = 0;
+
     hash = computeHash();
 }
 
@@ -154,6 +164,8 @@ bool Position::makeMove(const Move move) {
     const std::uint8_t opponentEnpassantRank = (sideToMove == Color::White) ? 4 : 3;
     const std::uint8_t enpassantRank = (sideToMove == Color::White) ? 2 : 5;
 
+    halfMoveCounter++; // wil be reset in case of capture or pawn move
+
     if (castling) {
         Square rookFrom = rookFromCastling(to);
         Square rookTo = rookToCastling(to);
@@ -164,6 +176,7 @@ bool Position::makeMove(const Move move) {
     else if (capture) {
         Square capturedSquare = enpassant ? Square(opponentEnpassantRank, to.file()) : to;
         removePiece(~sideToMove, capturedPieceType, capturedSquare);
+        halfMoveCounter = 0;
     }
 
     removePiece(sideToMove, pieceType, from);
@@ -183,6 +196,7 @@ bool Position::makeMove(const Move move) {
             removePiece(sideToMove, PieceType::Pawn, to);
             setPiece(sideToMove, promotionPieceType, to);
         }
+        halfMoveCounter = 0;
     }
 
     if (castlingRights != CastlingRight::None) {
@@ -249,7 +263,8 @@ std::ostream& operator<<(std::ostream& output, const Position& pos) {
     if ((pos.castlingRights & CastlingRight::BlackKingSide) != CastlingRight::None)    { output << "k"; }
     if ((pos.castlingRights & CastlingRight::BlackQueenSide) != CastlingRight::None)   { output << "q"; }
     if (pos.castlingRights == CastlingRight::None)   { output << " None"; }
-    output << "\n    En passant square: " << pos.enPassantSquare << std::endl;
+    output << "\n    En passant square: " << pos.enPassantSquare;
+    output << "\n    Half move counter: " << pos.halfMoveCounter;
     output << "\n\n    Hash Value: 0x" << std::hex << pos.hash << std::dec << std::endl;
 
     // output << "\n\n    White occupied: \n" << pos.white.occupied;

@@ -29,6 +29,8 @@ private:
     std::uint32_t value;
 
 public:
+    static Move Invalid() { return {0}; }
+
     Move() : value(0) {};
     Move(const std::uint32_t val) : value(val) {};
 
