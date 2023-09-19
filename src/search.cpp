@@ -83,7 +83,9 @@ void Search::reportInfo(ThreadData& threadData, NodeData* nodeData, SearchStats&
     }
 
 #ifdef SEARCH_STATS
-    std::cout << "\nStats: BetaCutoff " << searchStats.betaCutoff;
+    std::cout << "\nStats: NegamaxNodes: " << searchStats.negamaxNodeCounter;
+    std::cout << "\nStats: QuiescenceNodes: " << searchStats.quiescenceNodeCounter;
+    std::cout << "\nStats: BetaCutoff: " << searchStats.betaCutoff;
 #endif
 
     std::cout << std::endl;
@@ -226,6 +228,9 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
             alpha = score;
 
             if (score >= beta) {
+#ifdef SEARCH_STATS
+                searchStats.betaCutoff++;
+#endif
                 break;
             }
         }
