@@ -20,7 +20,9 @@ public:
     static constexpr Bitboard AntiDiagonalBitboard(Square square) { Bitboard mainDiag {0x0102040810204080ULL};
                                                                     int diag  = 7 - static_cast<int>(square.file()) - static_cast<int>(square.rank());
                                                                     return diag >= 0 ? mainDiag >> diag * 8 : mainDiag << -diag * 8; }
-    
+    static constexpr Bitboard LightSquares() { return {0x55AA55AA55AA55AAULL}; };
+    static constexpr Bitboard DarkSquares() { return {0xAA55AA55AA55AA55ULL}; };
+
     constexpr Bitboard(std::uint64_t val = 0ULL) : value(val) {};
     constexpr Bitboard(Square square) : value(1ULL << square.index()) {};
     constexpr Bitboard(std::uint8_t rank, std::uint8_t file) : value(1ULL << (rank * 8 + file)) {};

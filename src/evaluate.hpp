@@ -107,3 +107,4 @@ template<PieceType pieceType, Color color>
 Score evaluatePieces(const Position& position);
 template<Color color>
 Score evaluateKing(const Position& position);
+bool checkInsufficientMaterial(const Position& position);

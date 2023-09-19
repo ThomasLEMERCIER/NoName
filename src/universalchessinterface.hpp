@@ -1,13 +1,12 @@
 #pragma once
 
 #include "move.hpp"
-#include "position.hpp"
+#include "game.hpp"
 #include "search.hpp"
 
 class UniversalChessInterface {
 private:
-    bool positionSet {false};
-    Position position {};
+    Game game;
 
     SearchLimits searchLimits;
     Search search;
