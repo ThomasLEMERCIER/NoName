@@ -30,7 +30,7 @@ std::uint64_t perftDriver(const Position& pos, const std::uint32_t depth) {
     generateMoves<MoveType::AllMoves>(moveList, pos);
     for (std::uint32_t count = 0; count < moveList.getSize(); ++count) {
         Position nextPos = pos;
-        if (!nextPos.makeMove(moveList[count]))
+        if (!nextPos.makeMove(moveList[count].move))
             continue;
 
         nodes += perftDriver(nextPos, depth - 1);
@@ -50,14 +50,14 @@ void perft(const Position& pos, const std::uint32_t depth) {
     generateMoves<MoveType::AllMoves>(moveList, pos);
     for (std::uint32_t count = 0; count < moveList.getSize(); ++count) {
         Position nextPos = pos;
-        if (!nextPos.makeMove(moveList[count])) {
+        if (!nextPos.makeMove(moveList[count].move)) {
             continue;
         }
 
         std::uint64_t oldNodes = nodes;
         nodes += perftDriver(nextPos, depth - 1);
 
-        std::cout << moveList[count] << ": " << nodes - oldNodes << "\n";
+        std::cout << moveList[count].move << ": " << nodes - oldNodes << "\n";
     }
 
     TimePoint elapsedTime = getTime() - startTime;
