@@ -22,7 +22,7 @@ Move UniversalChessInterface::parseMove(std::string moveString) {
     Square targetSquare {static_cast<uint8_t>((moveString[3] - '1')), static_cast<uint8_t>((moveString[2] - 'a'))};
 
     for (std::uint32_t i = 0; i < moveList.getSize(); i++) {
-        Move move = moveList[i];
+        Move move = moveList[i].move;
 
         if (sourceSquare == move.getFrom() && targetSquare == move.getTo()) {
             Piece promotionPiece = move.getPromotionPiece();

@@ -20,6 +20,9 @@ private:
     MoveSorterStage currentStage = MoveSorterStage::GeneratingNonQuiets;
     std::uint32_t indexMoveList = 0;
     bool onlyNonQuiets = false;
+
+    void scoreNonQuiets();
+    Move nextSortedMove();
 public:
     bool nextMove(Move& outMove);
 
