@@ -23,7 +23,7 @@ struct TTEntry {
 
 class TranspositionTable {
 public:
-    explicit TranspositionTable(std::uint64_t initSize) { initTable(initSize); };
+    explicit TranspositionTable(std::uint64_t initSize) : table{nullptr}, size{0} { initTable(initSize); };
     ~TranspositionTable() { delete[] table; };
 
     void initTable(std::uint64_t newMemorySize);
