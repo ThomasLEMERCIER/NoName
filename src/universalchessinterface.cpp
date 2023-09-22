@@ -158,6 +158,7 @@ void UniversalChessInterface::bench() {
         threadData.searchStats = {};
         threadData.searchStack[0].position = game.getCurrentPosition();
 
+        search.setStopSearchFlag(false);
         search.searchInternal(threadData);
         totalNodes += threadData.searchStats.quiescenceNodeCounter + threadData.searchStats.negamaxNodeCounter;
     }
