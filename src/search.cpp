@@ -190,7 +190,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         return drawValue;
     }
 
-    if (bestScore != invalidScore) {
+    if(!searchStop) {
         Bound bound = (bestScore >= beta) ? Bound::Lower : (bestScore > oldAlpha) ? Bound::Exact : Bound::Upper;
         transpositionTable.writeEntry(currentPosition, nodeData->depth, TranspositionTable::ScoreToTT(bestScore, nodeData->ply), bestMove, bound);
     }
@@ -272,7 +272,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
         }
     }
 
-    if (bestScore != invalidScore) {
+    if(!searchStop) {
         Bound bound = (bestScore >= beta) ? Bound::Lower : (bestScore > oldAlpha) ? Bound::Exact : Bound::Upper;
         transpositionTable.writeEntry(currentPosition, 0, TranspositionTable::ScoreToTT(bestScore, nodeData->ply), bestMove, bound);
     }
