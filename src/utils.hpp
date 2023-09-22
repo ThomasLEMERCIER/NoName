@@ -13,6 +13,7 @@ constexpr std::uint8_t getLsbIndex(std::uint64_t x) { return __builtin_ctzll(x);
 constexpr std::uint8_t maxSearchDepth = 255;
 
 using Score = std::int16_t;
+using ScoreTT = std::int16_t;
 constexpr Score invalidScore         = INT16_MAX;
 constexpr Score infValue             = 32700;
 constexpr Score checkmateValue       = 32000;

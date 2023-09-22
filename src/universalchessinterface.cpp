@@ -168,6 +168,17 @@ void UniversalChessInterface::bench() {
     std::cout << totalNodes << " nodes " << nps << " nps" << std::endl;
 }
 
+void UniversalChessInterface::parseSetOption(std::istringstream &ss) {
+    std::string token;
+    ss >> token >> token;
+    if (token == "Hash") {
+        std::uint64_t memorySize;
+        ss >> token >> memorySize;
+        memorySize = memorySize * 1024 * 1024;
+        search.resizeTT(memorySize);
+    }
+}
+
 void UniversalChessInterface::loop(int argc, char **argv) {
     if (argc > 1 && (strncmp(argv[1], "bench", 5) == 0)) {
        bench(); return;
@@ -186,14 +197,20 @@ void UniversalChessInterface::loop(int argc, char **argv) {
 
         if (token == "quit")            break;
         else if (token == "stop")       search.stopSearch();
-        else if (token == "uci")        std::cout << "id name NONAME\nid author Thomas Lemercier\nuciok" << std::endl;
+        else if (token == "uci")        {
+            std::cout << "id name NONAME\n";
+            std::cout << "id author Thomas Lemercier\n";
+            std::cout << "uciok\n";
+            std::cout << "Hash, type is spin default 8 min 1 max 1000" << std::endl;
+        }
         else if (token == "isready")    std::cout << "readyok\n" << std::endl;
-        else if (token == "ucinewgame") {}
+        else if (token == "ucinewgame") search.clear();
         else if (token == "position")   parsePosition(ss);
         else if (token == "go")         parseGo(ss);
         else if (token == "bench")      bench();
         else if (token == "perft")      parsePerft(ss);
         else if (token == "eval")       std::cout << "Evaluation value: " << evaluate(game.getCurrentPosition()) << std::endl;
+        else if (token == "setoption")  parseSetOption(ss);
     }
 
     search.stopSearch();
