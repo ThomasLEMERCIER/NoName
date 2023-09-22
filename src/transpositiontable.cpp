@@ -5,6 +5,7 @@ void TranspositionTable::initTable(std::uint64_t newMemorySize) {
     delete[] table;
     table = new TTEntry[newSize];
     size = newSize;
+    clear();
     std::cout << "Transposition Table size: (" << size << ", " << (size * sizeof(TTEntry)) << "B, " << ((size * sizeof(TTEntry)) / (1024. * 1024.)) << "MiB)" << std::endl;
 }
 
