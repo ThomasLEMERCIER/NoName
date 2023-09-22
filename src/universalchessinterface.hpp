@@ -15,6 +15,7 @@ private:
     void parsePosition(std::istringstream& ss);
     void parseGo(std::istringstream& ss);
     void parsePerft(std::istringstream& ss);
+    void parseSetOption(std::istringstream& ss);
     void bench();
 public:
     void loop(int argc, char* argv[]);

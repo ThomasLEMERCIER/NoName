@@ -3,6 +3,7 @@
 #include "game.hpp"
 #include "move.hpp"
 #include "position.hpp"
+#include "transpositiontable.hpp"
 #include "utils.hpp"
 
 #include <array>
@@ -51,6 +52,7 @@ struct SearchStats {
 
 #ifdef SEARCH_STATS
     std::uint64_t betaCutoff;
+    std::uint64_t ttHits;
 #endif
 };
 
@@ -69,6 +71,8 @@ public:
     void startSearch(const Game& game, const SearchLimits& searchLimits);
     void stopSearch();
     void searchInternal(ThreadData& threadData);
+    void clear() { transpositionTable.clear(); };
+    void resizeTT(std::uint64_t newMemorySize) { transpositionTable.initTable(newMemorySize); };
 
 private:
     static void reportInfo(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
@@ -81,6 +85,8 @@ private:
 
     // Global data
     std::atomic<bool> searchStop;
+    TranspositionTable transpositionTable {8 * 1024 * 1024};
+
 
     // Thread specific data
     ThreadData data;

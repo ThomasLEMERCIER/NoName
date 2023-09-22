@@ -86,6 +86,7 @@ void Search::reportInfo(ThreadData& threadData, NodeData* nodeData, SearchStats&
     std::cout << "\nStats: NegamaxNodes: " << searchStats.negamaxNodeCounter;
     std::cout << "\nStats: QuiescenceNodes: " << searchStats.quiescenceNodeCounter;
     std::cout << "\nStats: BetaCutoff: " << searchStats.betaCutoff;
+    std::cout << "\nStats: TTHits: " << searchStats.ttHits;
 #endif
 
     std::cout << std::endl;
@@ -120,9 +121,24 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     Score alpha = oldAlpha;
     Score beta = nodeData->beta;
 
+    TTEntry entry;
+    if (transpositionTable.probeTable(currentPosition.hash, entry)) {
+#ifdef SEARCH_STATS
+        searchStats.ttHits++;
+#endif
+        if (!rootNode && entry.depth >= nodeData->depth) {
+            Score ttScore = TranspositionTable::ScoreFromTT(entry.score, nodeData->ply);
+
+            if (entry.bound == Bound::Exact)                     return ttScore;
+            if (entry.bound == Bound::Upper && ttScore <= alpha) return ttScore;
+            if (entry.bound == Bound::Lower && ttScore >= beta)  return ttScore;
+        }
+    }
+
     MoveSorter moveSorter {currentPosition};
     std::uint8_t legalMoveCounter = 0;
     Move outMove;
+    Move bestMove = Move::Invalid();
 
     NodeData& childNode = *(nodeData + 1);
     childNode.clear();
@@ -146,6 +162,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
         if (score > bestScore) {
             bestScore = score;
+            bestMove = outMove;
         }
 
         if (score > alpha) {
@@ -173,6 +190,11 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         return drawValue;
     }
 
+    if(!searchStop) {
+        Bound bound = (bestScore >= beta) ? Bound::Lower : (bestScore > oldAlpha) ? Bound::Exact : Bound::Upper;
+        transpositionTable.writeEntry(currentPosition, nodeData->depth, TranspositionTable::ScoreToTT(bestScore, nodeData->ply), bestMove, bound);
+    }
+
     return bestScore;
 }
 
@@ -185,16 +207,28 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
 
     searchStats.quiescenceNodeCounter++;
 
+    Score alpha = oldAlpha;
+    Score beta = nodeData->beta;
+
+    TTEntry entry;
+    if (transpositionTable.probeTable(currentPosition.hash, entry)) {
+#ifdef SEARCH_STATS
+        searchStats.ttHits++;
+#endif
+        Score ttScore = TranspositionTable::ScoreFromTT(entry.score, nodeData->ply);
+
+        if (entry.bound == Bound::Exact)                     return ttScore;
+        if (entry.bound == Bound::Upper && ttScore <= alpha) return ttScore;
+        if (entry.bound == Bound::Lower && ttScore >= beta)  return ttScore;
+    }
+
     Score staticEvaluation = evaluate(currentPosition);
+    Score bestScore = staticEvaluation;
 
     if (nodeData->ply >= maxSearchDepth - 1) {
         WARNING("Hit Max Depth search in Quiescence search, ply count: " << nodeData->ply << "\n")
         return staticEvaluation;
     }
-
-    Score alpha = oldAlpha;
-    Score beta = nodeData->beta;
-    Score bestScore = staticEvaluation;
 
     if (bestScore >= beta)
         return staticEvaluation;
@@ -204,6 +238,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
 
     MoveSorter moveSorter {currentPosition, true};
     Move outMove;
+    Move bestMove = Move::Invalid();
 
     NodeData& childNode = *(nodeData + 1);
     childNode.clear();
@@ -222,6 +257,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
 
         if (score > bestScore) {
             bestScore = score;
+            bestMove = outMove;
         }
 
         if (score > alpha) {
@@ -234,6 +270,11 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
                 break;
             }
         }
+    }
+
+    if(!searchStop) {
+        Bound bound = (bestScore >= beta) ? Bound::Lower : (bestScore > oldAlpha) ? Bound::Exact : Bound::Upper;
+        transpositionTable.writeEntry(currentPosition, 0, TranspositionTable::ScoreToTT(bestScore, nodeData->ply), bestMove, bound);
     }
 
     return bestScore;
