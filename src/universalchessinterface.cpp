@@ -201,7 +201,7 @@ void UniversalChessInterface::loop(int argc, char **argv) {
             std::cout << "id name NONAME\n";
             std::cout << "id author Thomas Lemercier\n";
             std::cout << "uciok\n";
-            std::cout << "option name Hash, type is spin default 8 min 1 max 1000" << std::endl;
+            std::cout << "option name Hash type spin default 8 min 1 max 1000" << std::endl;
         }
         else if (token == "isready")    std::cout << "readyok\n" << std::endl;
         else if (token == "ucinewgame") search.clear();
