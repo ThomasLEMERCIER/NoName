@@ -5,8 +5,17 @@
 
 bool MoveSorter::nextMove(Move& outMove) {
     switch (currentStage) {
+        case MoveSorterStage::TTMove:
+            currentStage = MoveSorterStage::GeneratingNonQuiets;
+            if (ttMove.isValid() && (!ttMove.isQuiet() || !onlyNonQuiets)) {
+                outMove = ttMove;
+                return true;
+            }
+            [[fallthrough]];
         case MoveSorterStage::GeneratingNonQuiets:
             generateMoves<MoveType::NonQuietMoves>(moveList, position);
+
+            moveList.filter(ttMove);
             scoreNonQuiets();
 
             currentStage = MoveSorterStage::NonQuiets;
@@ -23,6 +32,8 @@ bool MoveSorter::nextMove(Move& outMove) {
             [[fallthrough]];
         case MoveSorterStage::GeneratingQuiets:
             generateMoves<MoveType::QuietMoves>(moveList, position);
+
+            moveList.filter(ttMove);
 
             currentStage = MoveSorterStage::Quiets;
             [[fallthrough]];

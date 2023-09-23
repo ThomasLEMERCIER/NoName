@@ -73,6 +73,7 @@ public:
     void searchInternal(ThreadData& threadData);
     void clear() { transpositionTable.clear(); };
     void resizeTT(std::uint64_t newMemorySize) { transpositionTable.initTable(newMemorySize); };
+    void setStopSearchFlag(const bool flag) { searchStop = flag; };
 
 private:
     static void reportInfo(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);

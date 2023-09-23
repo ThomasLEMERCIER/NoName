@@ -65,6 +65,8 @@ public:
     constexpr bool isQuiet() const { return !isCapture() && getPromotionPiece() == static_cast<Piece>(0); }
     constexpr bool isValid() const { return value != 0u; }
 
+    constexpr bool operator==(const Move& rhs) const { return value == rhs.value; }
+
     friend std::ostream& operator<<(std::ostream& output, const Move& move) {
         if (!move.isValid()) {
             std::cout << "INVALID MOVE"; return output;
