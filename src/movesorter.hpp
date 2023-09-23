@@ -7,6 +7,7 @@
 #include <cstdint>
 
 enum class MoveSorterStage : std::uint8_t {
+    TTMove,
     GeneratingNonQuiets,
     NonQuiets,
     GeneratingQuiets,
@@ -17,7 +18,8 @@ class MoveSorter {
 private:
     MoveList moveList;
     const Position& position;
-    MoveSorterStage currentStage = MoveSorterStage::GeneratingNonQuiets;
+    const Move ttMove;
+    MoveSorterStage currentStage = MoveSorterStage::TTMove;
     std::uint32_t indexMoveList = 0;
     bool onlyNonQuiets = false;
 
@@ -26,6 +28,6 @@ private:
 public:
     bool nextMove(Move& outMove);
 
-    explicit MoveSorter(const Position& pos) : position{pos} {};
-    MoveSorter(const Position& pos, bool inQuiescence) : position{pos}, onlyNonQuiets{inQuiescence} {};
+    MoveSorter(const Position& pos, const Move& move) : position{pos}, ttMove{move} {};
+    MoveSorter(const Position& pos, const Move& move, bool inQuiescence) : position{pos}, ttMove{move}, onlyNonQuiets{inQuiescence} {};
 };

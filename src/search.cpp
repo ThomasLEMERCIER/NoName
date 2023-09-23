@@ -117,11 +117,11 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         return evaluate(currentPosition);
     }
 
-    Score bestScore = -infValue;
     Score alpha = oldAlpha;
     Score beta = nodeData->beta;
 
     TTEntry entry;
+    Move ttMove = Move::Invalid();
     if (transpositionTable.probeTable(currentPosition.hash, entry)) {
 #ifdef SEARCH_STATS
         searchStats.ttHits++;
@@ -133,11 +133,14 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
             if (entry.bound == Bound::Upper && ttScore <= alpha) return ttScore;
             if (entry.bound == Bound::Lower && ttScore >= beta)  return ttScore;
         }
+        ttMove = entry.move;
     }
 
-    MoveSorter moveSorter {currentPosition};
+    MoveSorter moveSorter {currentPosition, ttMove};
     std::uint8_t legalMoveCounter = 0;
     Move outMove;
+
+    Score bestScore = -infValue;
     Move bestMove = Move::Invalid();
 
     NodeData& childNode = *(nodeData + 1);
@@ -211,6 +214,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     Score beta = nodeData->beta;
 
     TTEntry entry;
+    Move ttMove = Move::Invalid();
     if (transpositionTable.probeTable(currentPosition.hash, entry)) {
 #ifdef SEARCH_STATS
         searchStats.ttHits++;
@@ -220,6 +224,8 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
         if (entry.bound == Bound::Exact)                     return ttScore;
         if (entry.bound == Bound::Upper && ttScore <= alpha) return ttScore;
         if (entry.bound == Bound::Lower && ttScore >= beta)  return ttScore;
+
+        ttMove = entry.move;
     }
 
     Score staticEvaluation = evaluate(currentPosition);
@@ -236,7 +242,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     if (alpha < bestScore)
         alpha = bestScore;
 
-    MoveSorter moveSorter {currentPosition, true};
+    MoveSorter moveSorter {currentPosition, ttMove, true};
     Move outMove;
     Move bestMove = Move::Invalid();
 
