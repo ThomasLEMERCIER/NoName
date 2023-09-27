@@ -29,7 +29,7 @@ void Search::searchInternal(ThreadData& threadData) {
         rootNode.depth = currentDepth;
         rootNode.ply = 0;
 
-        rootNode.pvLine.score = negamax(threadData, &rootNode, threadData.searchStats);
+        rootNode.pvLine.score = negamax<NodeType::Root>(threadData, &rootNode, threadData.searchStats);
         if (searchStop) break;
 
         if (threadData.isMainThread) {
@@ -96,6 +96,7 @@ void Search::reportResult(Move bestMove) {
     std::cout << "bestmove " << bestMove << std::endl;
 }
 
+template<NodeType nodeType>
 Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats) {
 
     if (searchStop || checkStopCondition(threadData.searchLimits, searchStats)) return invalidScore;
@@ -103,7 +104,8 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     Position& currentPosition = nodeData->position;
     PvLine& pvLine = nodeData->pvLine;
     Score oldAlpha = nodeData->alpha;
-    bool rootNode = nodeData->ply == 0;
+    constexpr bool rootNode = nodeType == NodeType::Root;
+    constexpr bool pvNode = nodeType == NodeType::Root || nodeType == NodeType::Pv;
 
     nodeData->pvLine.pvLength = 0;
     searchStats.negamaxNodeCounter++;
@@ -137,7 +139,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     }
 
     MoveSorter moveSorter {currentPosition, ttMove};
-    std::uint8_t legalMoveCounter = 0;
+    std::uint8_t moveCount = 0;
     Move outMove;
 
     Score bestScore = -infValue;
@@ -154,14 +156,23 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         if (!childNode.position.makeMove(outMove))
             continue;
 
-        legalMoveCounter++;
-
-        childNode.alpha = -beta;
-        childNode.beta = -alpha;
-        childNode.depth = nodeData->depth - depthReduction;
+        moveCount++;
         childNode.previousMove = outMove;
+        childNode.depth = nodeData->depth - depthReduction;
 
-        Score score = -negamax(threadData, &childNode, searchStats);
+        Score score;
+        if (!pvNode || moveCount > 1) {
+            childNode.alpha = -(alpha+1);
+            childNode.beta = -alpha;
+
+            score = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+        }
+        if (pvNode && (moveCount == 1 || (score > alpha && (rootNode || score < beta)))) {
+            childNode.alpha = -beta;
+            childNode.beta = -alpha;
+
+            score = -negamax<NodeType::Pv>(threadData, &childNode, searchStats);
+        }
 
         if (score > bestScore) {
             bestScore = score;
@@ -186,7 +197,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     }
 
     // either checkmate or stalemate
-    if (legalMoveCounter == 0) {
+    if (moveCount == 0) {
         if (currentPosition.isInCheck(currentPosition.sideToMove)) {
             return - (checkmateValue - nodeData->ply);
         }
