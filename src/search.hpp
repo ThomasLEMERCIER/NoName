@@ -11,6 +11,9 @@
 #include <cstdint>
 #include <thread>
 
+constexpr Score aspirationWindowStart = 20;
+constexpr Score aspirationWindowMinDepth = 5;
+
 enum class NodeType: std::uint8_t {
     Root,
     Pv,
@@ -90,6 +93,7 @@ private:
     template<NodeType nodeType>
     Score negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
     Score quiescenceNegamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
+    void aspirationWindow(ThreadData& threadData, NodeData* rootNode, Score previousScore);
 
     // Global data
     std::atomic<bool> searchStop;

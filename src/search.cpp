@@ -22,16 +22,15 @@ void Search::startSearch(const Game& game, const SearchLimits& searchLimits) {
 void Search::searchInternal(ThreadData& threadData) {
     NodeData &rootNode = threadData.searchStack[0];
     Move bestMoveSoFar;
+    Score previousScore = invalidScore;
 
     for (std::uint8_t currentDepth = 1; currentDepth <= threadData.searchLimits.depthLimit; currentDepth++) {
-        rootNode.alpha = -infValue;
-        rootNode.beta = +infValue;
         rootNode.depth = currentDepth;
-        rootNode.ply = 0;
+        aspirationWindow(threadData, &rootNode, previousScore);
 
-        rootNode.pvLine.score = negamax<NodeType::Root>(threadData, &rootNode, threadData.searchStats);
         if (searchStop) break;
 
+        previousScore = rootNode.pvLine.score;
         if (threadData.isMainThread) {
             reportInfo(threadData, &rootNode, threadData.searchStats);
             bestMoveSoFar = rootNode.pvLine.moves[0];
@@ -42,6 +41,44 @@ void Search::searchInternal(ThreadData& threadData) {
         reportResult(bestMoveSoFar);
     }
 }
+
+void Search::aspirationWindow(ThreadData &threadData, NodeData *rootNode, Score previousScore) {
+    Score delta = aspirationWindowStart;
+    Score alpha = -infValue;
+    Score beta  = +infValue;
+
+    if (rootNode->depth >= aspirationWindowMinDepth) {
+        alpha = std::min<std::int32_t>(previousScore - delta, +infValue);
+        beta  = std::max<std::int32_t>(previousScore + delta, -infValue);
+    }
+
+    for (;;) {
+
+        rootNode->alpha = alpha;
+        rootNode->beta  = beta;
+        rootNode->ply   = 0;
+
+        Score score = negamax<NodeType::Root>(threadData, rootNode, threadData.searchStats);
+
+        if (searchStop) return;
+
+        if (score > alpha && score < beta) {
+            rootNode->pvLine.score = score;
+            return;
+        }
+
+        if (score <= alpha) {
+            alpha = alpha - delta;
+            beta  = (alpha + beta + 1) / 2;
+        }
+        else if (score >= beta) {
+            beta = beta + delta;
+        }
+
+        delta += delta / 2;
+    }
+}
+
 
 void Search::stopSearch() {
     searchStop = true;
