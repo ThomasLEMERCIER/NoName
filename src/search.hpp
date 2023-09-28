@@ -11,6 +11,12 @@
 #include <cstdint>
 #include <thread>
 
+enum class NodeType: std::uint8_t {
+    Root,
+    Pv,
+    NonPv
+};
+
 struct PvLine {
     std::array<Move, maxSearchDepth> moves;
     std::uint8_t pvLength;
@@ -81,6 +87,7 @@ private:
     bool checkStopCondition(SearchLimits& searchLimits, SearchStats& searchStats);
     static bool isRepetition(NodeData* nodeData, const Game* game);
 
+    template<NodeType nodeType>
     Score negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
     Score quiescenceNegamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
 
