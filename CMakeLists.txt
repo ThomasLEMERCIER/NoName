@@ -12,9 +12,6 @@ IF(NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 message("* Current build type: ${CMAKE_BUILD_TYPE}")
 
-# Add options
-option(TRACE_EVAL "Output evaluation trace" OFF)
-
 # Set compiler flags :
 # Set common flags
 add_compile_options(-Wall -Wcast-qual -fno-exceptions -pedantic -Wextra -Wshadow -Wmissing-declarations -Wunused)

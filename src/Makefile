@@ -1,6 +1,6 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++20 -O3 -march=native -fomit-frame-pointer -ffast-math -flto -funroll-loops -finline-functions -fno-rtti
+CXXFLAGS = -std=c++20 -pthreads -O3 -march=native -fomit-frame-pointer -ffast-math -flto -funroll-loops -finline-functions -fno-rtti
 
 
 # Source files
