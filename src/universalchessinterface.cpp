@@ -138,8 +138,7 @@ void UniversalChessInterface::bench() {
     TimePoint startTime = getTime();
 
     searchLimits.timeLimit = invalidTimePoint;
-    searchLimits.searchTimeStart = startTime;
-    searchLimits.depthLimit = 5;
+    searchLimits.depthLimit = 7;
 
     for (const auto& benchFen : benchFens) {
         std::cout << "Current position fen: " << benchFen << std::endl;
@@ -149,6 +148,8 @@ void UniversalChessInterface::bench() {
 
         game.reset();
         game.recordPosition(position);
+
+        searchLimits.searchTimeStart = getTime();
 
         ThreadData threadData;
         threadData.searchLimits = searchLimits;
