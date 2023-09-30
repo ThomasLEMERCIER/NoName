@@ -1,5 +1,7 @@
 #include "evaluate.hpp"
 
+#include "attacks.hpp"
+
 Score evaluate(const Position &position) {
     EvaluationData evaluationData{};
     initializeEvaluationData(position, evaluationData);
@@ -77,6 +79,7 @@ template<PieceType pieceType, Color color>
 ScoreExt evaluatePieces(const Position& position) {
     constexpr Piece piece = getPiece(pieceType, color);
     Bitboard pieceBitboard = position.getPieces<piece>();
+    Bitboard occupied = position.occupied;
 
     ScoreExt score{};
     while (pieceBitboard) {
@@ -84,6 +87,13 @@ ScoreExt evaluatePieces(const Position& position) {
 
         // PSQT
         score += (color == Color::White) ? pieceSquareTable[static_cast<std::uint8_t>(pieceType)][square.index()] : pieceSquareTable[static_cast<std::uint8_t>(pieceType)][square.flipIndex()];
+
+        // Mobility
+        if constexpr (pieceType == PieceType::Knight || pieceType == PieceType::Bishop || pieceType == PieceType::Rook || pieceType == PieceType::Queen) {
+            Bitboard attacks = getAttacks<pieceType, color>(square, occupied);
+            score += mobilityTable[static_cast<std::uint8_t>(pieceType) - 1][attacks.count()];
+        }
+
     }
 
     return score;
