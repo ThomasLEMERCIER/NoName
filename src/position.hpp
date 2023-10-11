@@ -86,7 +86,10 @@ public:
     Piece pieceAt(const Square square) const;                                      // return piece at given square
 
     bool makeMove(const Move move);                                                // make move on position
-    
+
+    bool doNullMove();
+    bool hasNonPawnMaterial(Color color);
+
     template<Piece piece>
     constexpr Bitboard getPieces() const {
         constexpr Color color = getPieceColor(piece);

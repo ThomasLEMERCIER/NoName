@@ -30,6 +30,7 @@ private:
 
 public:
     static Move Invalid() { return {0}; }
+    static Move Null() { return {UINT32_MAX}; }
 
     Move() : value(0) {};
     Move(const std::uint32_t val) : value(val) {};
@@ -64,6 +65,7 @@ public:
 
     constexpr bool isQuiet() const { return !isCapture() && getPromotionPiece() == static_cast<Piece>(0); }
     constexpr bool isValid() const { return value != 0u; }
+    constexpr bool isNull() const { return value == UINT32_MAX; }
 
     constexpr bool operator==(const Move& rhs) const { return value == rhs.value; }
 

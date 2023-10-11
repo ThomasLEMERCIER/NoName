@@ -7,12 +7,15 @@ void Search::startSearch(const Game& game, const SearchLimits& searchLimits) {
     // stop any previous search
     stopSearch();
 
+    Position position = game.getCurrentPosition();
+
     // Setting thread data
     data.searchLimits = searchLimits;
     data.game = &game;
     data.isMainThread = true;
     data.searchStats = {};
-    data.searchStack[0].position = game.getCurrentPosition();
+    data.searchStack[0].position = position;
+    data.searchStack[0].inCheck = position.isInCheck(position.sideToMove);
 
     // launching search on thread
     searchStop = false;
@@ -141,6 +144,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     Position& currentPosition = nodeData->position;
     PvLine& pvLine = nodeData->pvLine;
     Score oldAlpha = nodeData->alpha;
+    std::int16_t depth = nodeData->depth;
     constexpr bool rootNode = nodeType == NodeType::Root;
     constexpr bool pvNode = nodeType == NodeType::Root || nodeType == NodeType::Pv;
 
@@ -149,7 +153,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
     if (!rootNode && (currentPosition.halfMoveCounter >= 100 || checkInsufficientMaterial(currentPosition) || isRepetition(nodeData, threadData.game))) return drawValue;
 
-    if (nodeData->depth <= 0) return quiescenceNegamax(threadData, nodeData, searchStats);
+    if (depth <= 0) return quiescenceNegamax(threadData, nodeData, searchStats);
 
     if (nodeData->ply >= maxSearchDepth - 1) {
         WARNING("Hit Max Depth search in negamax search, ply count: " << nodeData->ply << "\n")
@@ -165,7 +169,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 #ifdef SEARCH_STATS
         searchStats.ttHits++;
 #endif
-        if (!rootNode && entry.depth >= nodeData->depth) {
+        if (!rootNode && entry.depth >= depth) {
             Score ttScore = TranspositionTable::ScoreFromTT(entry.score, nodeData->ply);
 
             if (entry.bound == Bound::Exact)                     return ttScore;
@@ -175,6 +179,36 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         ttMove = entry.move;
     }
 
+    NodeData& childNode = *(nodeData + 1);
+    childNode.clear();
+    childNode.ply = nodeData->ply + 1;
+
+    if (!pvNode && !nodeData->inCheck) {
+        Score eval = evaluate(currentPosition);
+
+        if (eval >= beta &&
+            depth >= nullMovePruningStartDepth &&
+            !nodeData->previousMove.isNull() &&
+            currentPosition.hasNonPawnMaterial(currentPosition.sideToMove)) {
+
+            std::int16_t reduction = depth / 4 + nullMovePruningDepthReduction;
+
+            childNode.position = currentPosition;
+            childNode.position.doNullMove();
+            childNode.previousMove = Move::Null();
+            childNode.depth = depth - reduction;
+            childNode.inCheck = false;
+            childNode.alpha = -beta;
+            childNode.beta = -beta + 1;
+
+            Score nullScore = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+
+            if (nullScore >= beta) {
+                return (nullScore >= checkmateInMaxPly) ? beta : nullScore;
+            }
+        }
+    }
+
     MoveSorter moveSorter {currentPosition, ttMove};
     std::uint8_t moveCount = 0;
     Move outMove;
@@ -182,7 +216,6 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     Score bestScore = -infValue;
     Move bestMove = Move::Invalid();
 
-    NodeData& childNode = *(nodeData + 1);
     childNode.clear();
     childNode.ply = nodeData->ply + 1;
 
@@ -195,7 +228,8 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
         moveCount++;
         childNode.previousMove = outMove;
-        childNode.depth = nodeData->depth - depthReduction;
+        childNode.depth = depth - depthReduction;
+        childNode.inCheck = childNode.position.isInCheck(childNode.position.sideToMove);
 
         Score score;
         if (!pvNode || moveCount > 1) {
@@ -243,7 +277,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
     if(!searchStop) {
         Bound bound = (bestScore >= beta) ? Bound::Lower : (bestScore > oldAlpha) ? Bound::Exact : Bound::Upper;
-        transpositionTable.writeEntry(currentPosition, nodeData->depth, TranspositionTable::ScoreToTT(bestScore, nodeData->ply), bestMove, bound);
+        transpositionTable.writeEntry(currentPosition, depth, TranspositionTable::ScoreToTT(bestScore, nodeData->ply), bestMove, bound);
     }
 
     return bestScore;

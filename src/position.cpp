@@ -213,6 +213,20 @@ bool Position::makeMove(const Move move) {
     return !isInCheck(prevSideToMove);
 }
 
+bool Position::doNullMove() {
+    halfMoveCounter++;
+
+    if (enPassantSquare != Square::None) {
+        hash ^= enPassantFileZobristHash[enPassantSquare.file()];
+        enPassantSquare = Square::None;
+    }
+
+    sideToMove = ~sideToMove;
+    hash ^= colorZobristHash;
+
+    return true;
+}
+
 std::uint64_t Position::computeHash() {
     std::uint64_t hashValue = (sideToMove == Color::Black) ? colorZobristHash : 0ULL;
 
@@ -274,3 +288,7 @@ std::ostream& operator<<(std::ostream& output, const Position& pos) {
     return output;
 }
 
+bool Position::hasNonPawnMaterial(Color color) {
+    SidePosition& side = (color == Color::White) ? white : black;
+    return side.knights != 0 || side.bishops != 0 || side.rooks != 0 || side.queens != 0;
+}
