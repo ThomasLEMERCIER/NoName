@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef TUNER
+#define TRACE_EVAL
+#endif
+
 #include "position.hpp"
 #include "utils.hpp"
 
@@ -15,7 +19,7 @@ constexpr ScoreExt operator-(const ScoreExt& s1, const ScoreExt& s2) { return { 
 constexpr ScoreExt operator+=(ScoreExt& s1, const ScoreExt& s2) { return s1 = s1 + s2; }
 constexpr ScoreExt operator-=(ScoreExt& s1, const ScoreExt& s2) { return s1 = s1 - s2; }
 
-constexpr ScoreExt operator*(std::int32_t lhs, ScoreExt rhs) { return {static_cast<Score>(rhs.mg * lhs), static_cast<Score>(rhs.eg * lhs) };};
+constexpr ScoreExt operator*(std::int32_t lhs, ScoreExt rhs) { return {static_cast<Score>(rhs.mg * lhs), static_cast<Score>(rhs.eg * lhs) }; }
 
 constexpr ScoreExt pawnValue = {82, 144};
 constexpr ScoreExt knightValue = {426, 475};
@@ -134,3 +138,30 @@ ScoreExt evaluateKing(const Position& position);
 void evaluatePhase(EvaluationData& evaluationData);
 Score interpolateScore(ScoreExt finalScore, EvaluationData& evaluationData);
 bool checkInsufficientMaterial(const Position& position);
+
+#ifdef TRACE_EVAL
+
+struct EvalTrace {
+    std::uint8_t white;
+    std::uint8_t black;
+};
+
+struct EvalVector {
+    // Material evaluation and phase
+    EvalTrace pawnCount;
+    EvalTrace knightCount;
+    EvalTrace bishopCount;
+    EvalTrace rookCount;
+    EvalTrace queenCount;
+
+    // PSQT
+    EvalTrace pawnPosition[64];
+    EvalTrace knightPosition[64];
+    EvalTrace bishopPosition[64];
+    EvalTrace rookPosition[64];
+    EvalTrace queenPosition[64];
+    EvalTrace kingPosition[64];
+};
+
+extern EvalVector evalVector;
+#endif

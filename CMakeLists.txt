@@ -44,6 +44,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     )
 endif()
 
+# Set user-defined flags
+if(TUNER)
+    add_compile_options(-DTUNER)
+endif()
+
 # add subdirectories
 add_subdirectory(src)
 

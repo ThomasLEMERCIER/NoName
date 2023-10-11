@@ -1,6 +1,13 @@
 #include "evaluate.hpp"
 
+#ifdef TRACE_EVAL
+EvalVector evalVector;
+#endif
+
 Score evaluate(const Position &position) {
+#ifdef TRACE_EVAL
+    evalVector = {};
+#endif
     EvaluationData evaluationData{};
     initializeEvaluationData(position, evaluationData);
 
@@ -45,6 +52,20 @@ void initializeEvaluationData(const Position& position, EvaluationData& evaluati
     evaluationData.blackBishopCount = position.black.bishops.count();
     evaluationData.blackRookCount = position.black.rooks.count();
     evaluationData.blackQueenCount = position.black.queens.count();
+
+#ifdef TRACE_EVAL
+    evalVector.pawnCount.white   = evaluationData.whitePawnCount;
+    evalVector.knightCount.white = evaluationData.whiteKnightCount;
+    evalVector.bishopCount.white = evaluationData.whiteBishopCount;
+    evalVector.rookCount.white   = evaluationData.whiteRookCount;
+    evalVector.queenCount.white  = evaluationData.whiteQueenCount;
+
+    evalVector.pawnCount.black   = evaluationData.blackPawnCount;
+    evalVector.knightCount.black = evaluationData.blackKnightCount;
+    evalVector.bishopCount.black = evaluationData.blackBishopCount;
+    evalVector.rookCount.black   = evaluationData.blackRookCount;
+    evalVector.queenCount.black  = evaluationData.blackQueenCount;
+#endif
 }
 
 ScoreExt evaluateMaterial(EvaluationData& evaluationData) {
@@ -68,6 +89,11 @@ ScoreExt evaluatePawns(const Position &position) {
 
         // PSQT
         score += (color == Color::White) ? pawnSquareTable[square.index()] : pawnSquareTable[square.flipIndex()];
+
+#ifdef TRACE_EVAL
+        if constexpr (color == Color::White) evalVector.pawnPosition[square.index()].white++;
+        if constexpr (color == Color::Black) evalVector.pawnPosition[square.flipIndex()].black++;
+#endif
     }
 
     return score;
@@ -84,6 +110,21 @@ ScoreExt evaluatePieces(const Position& position) {
 
         // PSQT
         score += (color == Color::White) ? pieceSquareTable[static_cast<std::uint8_t>(pieceType)][square.index()] : pieceSquareTable[static_cast<std::uint8_t>(pieceType)][square.flipIndex()];
+#ifdef TRACE_EVAL
+        if constexpr (color == Color::White) {
+            if constexpr (pieceType == PieceType::Knight) evalVector.knightPosition[square.index()].white++;
+            if constexpr (pieceType == PieceType::Bishop) evalVector.bishopPosition[square.index()].white++;
+            if constexpr (pieceType == PieceType::Rook)   evalVector.rookPosition[square.index()].white++;
+            if constexpr (pieceType == PieceType::Queen)  evalVector.queenPosition[square.index()].white++;
+        }
+        if constexpr(color == Color::Black) {
+            if constexpr (pieceType == PieceType::Knight) evalVector.knightPosition[square.flipIndex()].black++;
+            if constexpr (pieceType == PieceType::Bishop) evalVector.bishopPosition[square.flipIndex()].black++;
+            if constexpr (pieceType == PieceType::Rook)   evalVector.rookPosition[square.flipIndex()].black++;
+            if constexpr (pieceType == PieceType::Queen)  evalVector.queenPosition[square.flipIndex()].black++;
+        }
+#endif
+
     }
 
     return score;
@@ -96,6 +137,11 @@ ScoreExt evaluateKing(const Position &position) {
 
     // PSQT
     ScoreExt score = (color == Color::White) ? kingSquareTable[kingSquare.index()] : kingSquareTable[kingSquare.flipIndex()];
+
+#ifdef TRACE_EVAL
+    if constexpr (color == Color::White) evalVector.kingPosition[kingSquare.index()].white++;
+    if constexpr (color == Color::Black) evalVector.kingPosition[kingSquare.flipIndex()].black++;
+#endif
 
     return score;
 }
