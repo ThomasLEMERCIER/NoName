@@ -14,6 +14,9 @@
 constexpr Score aspirationWindowStart = 20;
 constexpr Score aspirationWindowMinDepth = 5;
 
+constexpr std::int16_t nullMovePruningDepthReduction = 4;
+constexpr std::uint16_t nullMovePruningStartDepth = 2;
+
 enum class NodeType: std::uint8_t {
     Root,
     Pv,
@@ -34,6 +37,7 @@ struct SearchLimits {
 
 struct NodeData {
     Position position;
+    bool inCheck;
 
     Score alpha;
     Score beta;
@@ -46,6 +50,7 @@ struct NodeData {
 
     void clear() {
         position = {};
+        inCheck = {};
         alpha = {};
         beta = {};
         depth = {};
