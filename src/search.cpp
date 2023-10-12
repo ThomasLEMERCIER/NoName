@@ -3,6 +3,10 @@
 #include "evaluate.hpp"
 #include "movesorter.hpp"
 
+#include <cmath>
+
+std::uint8_t lateMoveReductionTable[64][64];
+
 void Search::startSearch(const Game& game, const SearchLimits& searchLimits) {
     // stop any previous search
     stopSearch();
@@ -219,8 +223,6 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     childNode.clear();
     childNode.ply = nodeData->ply + 1;
 
-    std::int16_t depthReduction = 1;
-
     while (moveSorter.nextMove(outMove)) {
         childNode.position = currentPosition;
         if (!childNode.position.makeMove(outMove))
@@ -228,21 +230,79 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
         moveCount++;
         childNode.previousMove = outMove;
-        childNode.depth = depth - depthReduction;
         childNode.inCheck = childNode.position.isInCheck(childNode.position.sideToMove);
 
         Score score;
-        if (!pvNode || moveCount > 1) {
-            childNode.alpha = -(alpha+1);
-            childNode.beta = -alpha;
+        if constexpr (pvNode) {
+            if (moveCount > 1) {
+                std::int16_t depthReduction;
 
-            score = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+                if (outMove.isQuiet()) {
+                    depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount];
+                }
+                else {
+                    depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount] / 2;
+                }
+
+                if (depthReduction > 0) {
+                    childNode.alpha = -(alpha+1);
+                    childNode.beta = -alpha;
+                    childNode.depth = std::max(depth - depthReduction - 1, 1);
+
+                    score = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+                }
+
+                if (depthReduction == 0 || score > alpha) {
+                    childNode.alpha = -(alpha + 1);
+                    childNode.beta = -alpha;
+                    childNode.depth = depth - 1;
+
+                    score = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+                }
+            }
+
+            if (moveCount == 1 || (score > alpha && (rootNode || score < beta))) {
+                childNode.alpha = -beta;
+                childNode.beta = -alpha;
+                childNode.depth = depth - 1;
+
+                score = -negamax<NodeType::Pv>(threadData, &childNode, searchStats);
+            }
         }
-        if (pvNode && (moveCount == 1 || (score > alpha && (rootNode || score < beta)))) {
-            childNode.alpha = -beta;
-            childNode.beta = -alpha;
+        else {
+            if (moveCount > 1) {
+                std::int16_t depthReduction;
 
-            score = -negamax<NodeType::Pv>(threadData, &childNode, searchStats);
+                if (outMove.isQuiet()) {
+                    depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount];
+                }
+                else {
+                    depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount] / 2;
+                }
+
+                if (depthReduction > 0) {
+                    childNode.alpha = -(alpha+1);
+                    childNode.beta = -alpha;
+                    childNode.depth = std::max(depth - depthReduction - 1, 1);
+
+                    score = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+                }
+
+                if (depthReduction == 0 || score > alpha) {
+                    childNode.alpha = -(alpha + 1);
+                    childNode.beta = -alpha;
+                    childNode.depth = depth - 1;
+
+                    score = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+                }
+            }
+            else {
+                childNode.alpha = -(alpha+1);
+                childNode.beta = -alpha;
+                childNode.depth = depth - 1;
+
+                score = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+            }
         }
 
         if (score > bestScore) {
@@ -394,4 +454,18 @@ bool Search::isRepetition(NodeData* nodeData, const Game* game) {
 
     // Check for repetition outside the current search
     return game->checkRepetition(targetHash);
+}
+
+void initSearchParameters() {
+    for (std::uint8_t depth = 1; depth < 64; ++depth) {
+        for (std::uint8_t moveIndex = 1; moveIndex < 64; ++moveIndex) {
+            lateMoveReductionTable[depth][moveIndex] = std::clamp<std::int32_t>((baseReduction + log(static_cast<double>(depth)) * log(static_cast<double>(moveIndex)) * scaleReduction), 0, 64);
+        }
+    }
+
+    for (std::uint8_t index = 0; index < 64; ++index) {
+        lateMoveReductionTable[0][index] = 0;
+        lateMoveReductionTable[1][index] = 0;
+        lateMoveReductionTable[index][0] = 0;
+    }
 }
