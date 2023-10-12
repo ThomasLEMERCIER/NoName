@@ -173,12 +173,14 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 #ifdef SEARCH_STATS
         searchStats.ttHits++;
 #endif
-        if (!rootNode && entry.depth >= depth) {
-            Score ttScore = TranspositionTable::ScoreFromTT(entry.score, nodeData->ply);
+        if constexpr (!pvNode) {
+            if (entry.depth >= depth) {
+                Score ttScore = TranspositionTable::ScoreFromTT(entry.score, nodeData->ply);
 
-            if (entry.bound == Bound::Exact)                     return ttScore;
-            if (entry.bound == Bound::Upper && ttScore <= alpha) return ttScore;
-            if (entry.bound == Bound::Lower && ttScore >= beta)  return ttScore;
+                if (entry.bound == Bound::Exact) return ttScore;
+                if (entry.bound == Bound::Upper && ttScore <= alpha) return ttScore;
+                if (entry.bound == Bound::Lower && ttScore >= beta) return ttScore;
+            }
         }
         ttMove = entry.move;
     }
