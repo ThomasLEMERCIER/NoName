@@ -190,6 +190,12 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     if (!pvNode && !nodeData->inCheck) {
         Score eval = evaluate(currentPosition);
 
+        if (depth <= reverseFutilityDepth &&
+            eval >= beta &&
+            eval - futilityMargin(depth) >= beta) {
+            return eval;
+        }
+
         if (eval >= beta &&
             depth >= nullMovePruningStartDepth &&
             !nodeData->previousMove.isNull() &&
@@ -454,6 +460,10 @@ bool Search::isRepetition(NodeData* nodeData, const Game* game) {
 
     // Check for repetition outside the current search
     return game->checkRepetition(targetHash);
+}
+
+Score Search::futilityMargin(std::int16_t depth) {
+    return baseFutilityMargin + scaleFutilityMargin * depth;
 }
 
 void initSearchParameters() {

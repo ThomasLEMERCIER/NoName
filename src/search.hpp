@@ -19,9 +19,11 @@ constexpr std::uint16_t nullMovePruningStartDepth = 2;
 
 constexpr std::uint8_t baseReduction = 1;
 constexpr double scaleReduction = 0.5;
-
-
 extern std::uint8_t lateMoveReductionTable[64][64];
+
+constexpr std::int16_t reverseFutilityDepth = 8;
+constexpr Score baseFutilityMargin = 10;
+constexpr Score scaleFutilityMargin = 75;
 
 void initSearchParameters();
 
@@ -101,7 +103,9 @@ private:
     static void reportInfo(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
     static void reportResult(Move bestMove);
     bool checkStopCondition(SearchLimits& searchLimits, SearchStats& searchStats);
+
     static bool isRepetition(NodeData* nodeData, const Game* game);
+    static Score futilityMargin(std::int16_t depth);
 
     template<NodeType nodeType>
     Score negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
