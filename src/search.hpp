@@ -17,6 +17,14 @@ constexpr Score aspirationWindowMinDepth = 5;
 constexpr std::int16_t nullMovePruningDepthReduction = 4;
 constexpr std::uint16_t nullMovePruningStartDepth = 2;
 
+constexpr std::uint8_t baseReduction = 1;
+constexpr double scaleReduction = 0.5;
+
+
+extern std::uint8_t lateMoveReductionTable[64][64];
+
+void initSearchParameters();
+
 enum class NodeType: std::uint8_t {
     Root,
     Pv,

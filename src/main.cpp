@@ -1,6 +1,7 @@
 
 #include "attacks.hpp"
 #include "universalchessinterface.hpp"
+#include "search.hpp"
 #include "zobrist.hpp"
 
 
@@ -8,6 +9,7 @@ int main(int argc, char **argv)
 {
     initAttacks();
     initZobristKeys();
+    initSearchParameters();
 
     UniversalChessInterface uci;
     uci.loop(argc, argv);
