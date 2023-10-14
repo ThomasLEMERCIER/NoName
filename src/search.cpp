@@ -31,7 +31,7 @@ void Search::searchInternal(ThreadData& threadData) {
     Move bestMoveSoFar;
     Score previousScore = invalidScore;
 
-    for (std::uint8_t currentDepth = 1; currentDepth <= threadData.searchLimits.depthLimit; currentDepth++) {
+    for (std::int16_t currentDepth = 1; currentDepth <= threadData.searchLimits.depthLimit; currentDepth++) {
         rootNode.depth = currentDepth;
         aspirationWindow(threadData, &rootNode, previousScore);
 
