@@ -68,10 +68,11 @@ ScoreExt evaluatePawns(const Position &position) {
     constexpr Piece theirPiece = (color == Color::White) ? Piece::BlackPawn : Piece::WhitePawn;
     Bitboard ourPawns = position.getPieces<ourPiece>();
     Bitboard theirPawns = position.getPieces<theirPiece>();
+    Bitboard tempPawns = ourPawns;
 
     ScoreExt score{};
-    while (ourPawns) {
-        Square square = ourPawns.popLsb();
+    while (tempPawns) {
+        Square square = tempPawns.popLsb();
 
         // PSQT
         score += (color == Color::White) ? pawnSquareTable[square.index()] : pawnSquareTable[square.flipIndex()];
@@ -186,5 +187,4 @@ void initEvaluationParameters() {
         Bitboard fileBitboard = Bitboard::FileBitboard(file);
         isolatedPawnSpans[file] = fileBitboard.west() | fileBitboard.east();
     }
-
 }
