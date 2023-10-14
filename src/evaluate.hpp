@@ -38,6 +38,10 @@ constexpr ScoreExt mobilityBonus[][32] = {
                 S( -23, -50) }
 };
 
+constexpr ScoreExt passedPawnBonus[8]   = { S(   0,   0), S( -28,  23), S( -40,  35), S( -55,  60), S(   8,  89), S(  95, 166), S( 124, 293), S(   0,   0) }; // per rank
+constexpr ScoreExt isolatedPawnBonus[8] = { S(-13, -12), S(-1, -16), S(1, -16), S(3, -18), S(7, -19), S(3, -15), S(-4, -14), S(-4, -17) }; // per file
+constexpr ScoreExt doubledPawnBonus[8]  = { S(10, -29), S(-2, -26), S(0, -23), S(0, -20), S(3, -20), S(5, -26), S(4, -30), S(8, -31) }; // per file
+
 constexpr ScoreExt pawnSquareTable[64] = {
         S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0),
         S( -13,   7), S(  -4,   0), S(   1,   4), S(   6,   1), S(   3,  10), S(  -9,   4), S(  -9,   3), S( -16,   7),
@@ -136,6 +140,7 @@ struct EvaluationData {
     std::int32_t phase;
 };
 
+void initEvaluationParameters();
 Score evaluate(const Position& position);
 void initializeEvaluationData(const Position& position, EvaluationData& evalData);
 ScoreExt evaluateMaterial(EvaluationData& evaluationData);
