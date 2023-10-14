@@ -65,6 +65,7 @@ public:
     constexpr std::uint8_t index() const { return value; }
     constexpr std::uint8_t flipIndex() const { return value ^ 56; }
     constexpr std::uint8_t rank() const { return value / 8u; }
+    constexpr std::uint8_t reverseRank() const { return 7 - value / 8u; }
     constexpr std::uint8_t file() const { return value % 8u; }
 
     constexpr bool operator==(const Square& rhs) const { return value == rhs.value; }

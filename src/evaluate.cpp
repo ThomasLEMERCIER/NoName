@@ -87,7 +87,7 @@ ScoreExt evaluatePawns(const Position &position) {
         }
 
         if (stoppers == 0ULL) {
-            score += passedPawnBonus[square.rank()];
+            score += (color == Color::White) ? passedPawnBonus[square.rank()] : passedPawnBonus[square.reverseRank()];
         }
 
         if (adjacentFilePawns == 0ULL) {
