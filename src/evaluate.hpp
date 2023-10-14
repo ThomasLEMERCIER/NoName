@@ -42,6 +42,8 @@ constexpr ScoreExt passedPawnBonus[8]   = { S(   0,   0), S( -28,  23), S( -40, 
 constexpr ScoreExt isolatedPawnBonus[8] = { S(-13, -12), S(-1, -16), S(1, -16), S(3, -18), S(7, -19), S(3, -15), S(-4, -14), S(-4, -17) }; // per file
 constexpr ScoreExt doubledPawnBonus[8]  = { S(10, -29), S(-2, -26), S(0, -23), S(0, -20), S(3, -20), S(5, -26), S(4, -30), S(8, -31) }; // per file
 
+constexpr ScoreExt openFileRookBonus[2] = { S(  10,   9), S(  34,   8) };
+
 constexpr ScoreExt pawnSquareTable[64] = {
         S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0), S(   0,   0),
         S( -13,   7), S(  -4,   0), S(   1,   4), S(   6,   1), S(   3,  10), S(  -9,   4), S(  -9,   3), S( -16,   7),

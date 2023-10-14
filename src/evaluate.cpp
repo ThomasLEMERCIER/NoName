@@ -115,6 +115,25 @@ ScoreExt evaluatePieces(const Position& position) {
             Bitboard attacks = getAttacks<pieceType, color>(square, position.occupied);
             score += mobilityBonus[static_cast<std::uint8_t>(pieceType) - 1][attacks.count()];
         }
+
+        // Rook on open file
+        if constexpr (pieceType == PieceType::Rook) {
+            constexpr Piece ourPawn = (color == Color::White) ? Piece::WhitePawn : Piece::BlackPawn;
+            constexpr Piece theirPawn = (color == Color::White) ? Piece::BlackPawn : Piece::WhitePawn;
+            Bitboard ourPawns = position.getPieces<ourPawn>();
+            Bitboard theirPawns = position.getPieces<theirPawn>();
+
+            if ((ourPawns & Bitboard::FileBitboard(square.file())) == 0ULL) {
+                // open file
+                if ((theirPawns & Bitboard::FileBitboard(square.file())) == 0ULL) {
+                    score += openFileRookBonus[1];
+                }
+                // semi open file
+                else {
+                    score +=openFileRookBonus[0];
+                }
+            }
+        }
     }
 
     return score;
