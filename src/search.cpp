@@ -1,7 +1,6 @@
 #include "search.hpp"
 
 #include "evaluate.hpp"
-#include "movesorter.hpp"
 
 #include <cmath>
 
@@ -16,10 +15,14 @@ void Search::startSearch(const Game& game, const SearchLimits& searchLimits) {
     // Setting thread data
     data.searchLimits = searchLimits;
     data.game = &game;
-    data.isMainThread = true;
-    data.searchStats = {};
+
     data.searchStack[0].position = position;
     data.searchStack[0].inCheck = position.isInCheck(position.sideToMove);
+
+    data.isMainThread = true;
+    data.searchStats = {};
+
+    data.moveHistoryTable = {};
 
     // launching search on thread
     searchStop = false;
@@ -219,7 +222,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         }
     }
 
-    MoveSorter moveSorter {currentPosition, ttMove};
+    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable};
     std::uint8_t moveCount = 0;
     Move outMove;
 
@@ -341,6 +344,12 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         return drawValue;
     }
 
+    if (bestScore >= beta) {
+        if (bestMove.isQuiet()) {
+            updateQuietMoveHistory(threadData, nodeData, bestMove);
+        }
+    }
+
     if(!searchStop) {
         Bound bound = (bestScore >= beta) ? Bound::Lower : (bestScore > oldAlpha) ? Bound::Exact : Bound::Upper;
         transpositionTable.writeEntry(currentPosition, depth, TranspositionTable::ScoreToTT(bestScore, nodeData->ply), bestMove, bound);
@@ -390,7 +399,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     if (alpha < bestScore)
         alpha = bestScore;
 
-    MoveSorter moveSorter {currentPosition, ttMove, true};
+    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable, true};
     Move outMove;
     Move bestMove = Move::Invalid();
 
@@ -400,6 +409,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
 
     while (moveSorter.nextMove(outMove)) {
         childNode.position = currentPosition;
+
         if (!childNode.position.makeMove(outMove))
             continue;
 
@@ -464,6 +474,13 @@ bool Search::isRepetition(NodeData* nodeData, const Game* game) {
 
 Score Search::futilityMargin(std::int16_t depth) {
     return baseFutilityMargin + scaleFutilityMargin * depth;
+}
+
+void Search::updateQuietMoveHistory(ThreadData &threadData, NodeData *nodeData, Move bestMove) {
+    std::int32_t bonus = (nodeData->depth * nodeData->depth);
+    const Color sideToMove = nodeData->position.sideToMove;
+
+    threadData.moveHistoryTable[static_cast<std::uint8_t>(sideToMove)][bestMove.getFrom().index()][bestMove.getTo().index()] += bonus;
 }
 
 void initSearchParameters() {
