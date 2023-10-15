@@ -224,6 +224,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
     MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable};
     std::uint8_t moveCount = 0;
+    std::uint8_t quietMoveCount = 0;
     Move outMove;
 
     Score bestScore = -infValue;
@@ -239,11 +240,12 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
             continue;
 
         moveCount++;
+        if (outMove.isQuiet()) quietMoveCount++;
         childNode.previousMove = outMove;
         childNode.inCheck = childNode.position.isInCheck(childNode.position.sideToMove);
 
         if constexpr (!rootNode) {
-            if (moveCount >= lateMovePruningThreshold(depth)) {
+            if (quietMoveCount >= lateMovePruningThreshold(depth)) {
                 skipQuiet = true;
             }
         }
