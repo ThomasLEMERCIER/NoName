@@ -34,12 +34,13 @@ bool MoveSorter::nextMove(Move& outMove) {
             generateMoves<MoveType::QuietMoves>(moveList, position);
 
             moveList.filter(ttMove);
+            scoreQuiets();
 
             currentStage = MoveSorterStage::Quiets;
             [[fallthrough]];
         case MoveSorterStage::Quiets:
             if (indexMoveList < moveList.getSize()) {
-                outMove = moveList[indexMoveList++].move;
+                outMove = nextSortedMove();
                 return true;
             }
             else {
@@ -51,11 +52,18 @@ bool MoveSorter::nextMove(Move& outMove) {
 }
 
 void MoveSorter::scoreNonQuiets() {
-    for (std::uint32_t count = 0; count < moveList.getSize(); ++count) {
+    for (std::uint32_t count = indexMoveList; count < moveList.getSize(); ++count) {
         PieceType attacker = getPieceType(moveList[count].move.getPiece());
         PieceType victim = getPieceType(position.pieceAt(moveList[count].move.getTo()));
 
         moveList[count].score = 6 * static_cast<std::int32_t>(victim) - static_cast<std::int32_t>(attacker);
+    }
+}
+
+void MoveSorter::scoreQuiets() {
+    for (std::uint32_t count = indexMoveList; count < moveList.getSize(); ++count) {
+        Move move = moveList[count].move;
+        moveList[count].score = quietHistoryTable[static_cast<std::uint8_t>(position.sideToMove)][move.getFrom().index()][move.getTo().index()];
     }
 }
 

@@ -2,6 +2,7 @@
 
 #include "game.hpp"
 #include "move.hpp"
+#include "movesorter.hpp"
 #include "position.hpp"
 #include "transpositiontable.hpp"
 #include "utils.hpp"
@@ -88,6 +89,8 @@ struct ThreadData {
 
     bool isMainThread;
     SearchStats searchStats;
+
+    MoveHistoryTable moveHistoryTable;
 };
 
 class Search {
@@ -106,6 +109,7 @@ private:
 
     static bool isRepetition(NodeData* nodeData, const Game* game);
     static Score futilityMargin(std::int16_t depth);
+    static void updateQuietMoveHistory(ThreadData& threadData, NodeData* nodeData, Move bestMove);
 
     template<NodeType nodeType>
     Score negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
