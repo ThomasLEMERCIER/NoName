@@ -3,11 +3,11 @@
 #include "movegen.hpp"
 #include "piece.hpp"
 
-bool MoveSorter::nextMove(Move& outMove) {
+bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
     switch (currentStage) {
         case MoveSorterStage::TTMove:
             currentStage = MoveSorterStage::GeneratingNonQuiets;
-            if (ttMove.isValid() && (!ttMove.isQuiet() || !onlyNonQuiets)) {
+            if (ttMove.isValid() && (!ttMove.isQuiet() || !skipQuiet)) {
                 outMove = ttMove;
                 return true;
             }
@@ -26,7 +26,7 @@ bool MoveSorter::nextMove(Move& outMove) {
                 return true;
             }
             else {
-                if (onlyNonQuiets) return false;
+                if (skipQuiet) return false;
                 currentStage = MoveSorterStage::GeneratingQuiets;
             }
             [[fallthrough]];
@@ -39,7 +39,7 @@ bool MoveSorter::nextMove(Move& outMove) {
             currentStage = MoveSorterStage::Quiets;
             [[fallthrough]];
         case MoveSorterStage::Quiets:
-            if (indexMoveList < moveList.getSize()) {
+            if (!skipQuiet && indexMoveList < moveList.getSize()) {
                 outMove = nextSortedMove();
                 return true;
             }

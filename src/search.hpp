@@ -26,6 +26,8 @@ constexpr std::int16_t reverseFutilityDepth = 8;
 constexpr Score baseFutilityMargin = 10;
 constexpr Score scaleFutilityMargin = 75;
 
+constexpr std::uint32_t baseLateMovePruning = 3;
+
 void initSearchParameters();
 
 enum class NodeType: std::uint8_t {
@@ -108,7 +110,8 @@ private:
     bool checkStopCondition(SearchLimits& searchLimits, SearchStats& searchStats);
 
     static bool isRepetition(NodeData* nodeData, const Game* game);
-    static Score futilityMargin(std::int16_t depth);
+    static constexpr Score futilityMargin(std::int16_t depth);
+    static constexpr std::uint32_t lateMovePruningThreshold(std::int16_t depth);
     static void updateQuietMoveHistory(ThreadData& threadData, NodeData* nodeData, Move bestMove);
 
     template<NodeType nodeType>
@@ -124,6 +127,7 @@ private:
     // Thread specific data
     ThreadData data;
     std::thread thread;
+
 
 };
 
