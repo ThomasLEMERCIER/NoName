@@ -1,5 +1,10 @@
 #include "evaluate.hpp"
 
+#include "attacks.hpp"
+
+Bitboard passedPawnSpans[2][64];
+Bitboard isolatedPawnSpans[8];
+
 Score evaluate(const Position &position) {
     EvaluationData evaluationData{};
     initializeEvaluationData(position, evaluationData);
@@ -60,14 +65,34 @@ ScoreExt evaluateMaterial(EvaluationData& evaluationData) {
 template <Color color>
 ScoreExt evaluatePawns(const Position &position) {
     constexpr Piece ourPiece = (color == Color::White) ? Piece::WhitePawn : Piece::BlackPawn;
+    constexpr Piece theirPiece = (color == Color::White) ? Piece::BlackPawn : Piece::WhitePawn;
     Bitboard ourPawns = position.getPieces<ourPiece>();
+    Bitboard theirPawns = position.getPieces<theirPiece>();
+    Bitboard tempPawns = ourPawns;
 
     ScoreExt score{};
-    while (ourPawns) {
-        Square square = ourPawns.popLsb();
+    while (tempPawns) {
+        Square square = tempPawns.popLsb();
 
         // PSQT
         score += (color == Color::White) ? pawnSquareTable[square.index()] : pawnSquareTable[square.flipIndex()];
+
+        // Pawn structure
+        Bitboard pawnsOnFile = ourPawns & Bitboard::FileBitboard(square.file());
+        Bitboard stoppers = passedPawnSpans[static_cast<std::uint8_t>(color)][square.index()] & theirPawns;
+        Bitboard adjacentFilePawns = isolatedPawnSpans[square.file()] & ourPawns;
+
+        if (pawnsOnFile.several()) {
+            score += doubledPawnBonus[square.file()];
+        }
+
+        if (stoppers == 0ULL) {
+            score += (color == Color::White) ? passedPawnBonus[square.rank()] : passedPawnBonus[square.reverseRank()];
+        }
+
+        if (adjacentFilePawns == 0ULL) {
+            score += isolatedPawnBonus[square.file()];
+        }
     }
 
     return score;
@@ -84,6 +109,31 @@ ScoreExt evaluatePieces(const Position& position) {
 
         // PSQT
         score += (color == Color::White) ? pieceSquareTable[static_cast<std::uint8_t>(pieceType)][square.index()] : pieceSquareTable[static_cast<std::uint8_t>(pieceType)][square.flipIndex()];
+
+        // Mobility
+        if constexpr (pieceType == PieceType::Knight || pieceType == PieceType::Bishop || pieceType == PieceType::Rook || pieceType == PieceType::Queen) {
+            Bitboard attacks = getAttacks<pieceType, color>(square, position.occupied);
+            score += mobilityBonus[static_cast<std::uint8_t>(pieceType) - 1][attacks.count()];
+        }
+
+        // Rook on open file
+        if constexpr (pieceType == PieceType::Rook) {
+            constexpr Piece ourPawn = (color == Color::White) ? Piece::WhitePawn : Piece::BlackPawn;
+            constexpr Piece theirPawn = (color == Color::White) ? Piece::BlackPawn : Piece::WhitePawn;
+            Bitboard ourPawns = position.getPieces<ourPawn>();
+            Bitboard theirPawns = position.getPieces<theirPawn>();
+
+            if ((ourPawns & Bitboard::FileBitboard(square.file())) == 0ULL) {
+                // open file
+                if ((theirPawns & Bitboard::FileBitboard(square.file())) == 0ULL) {
+                    score += openFileRookBonus[1];
+                }
+                // semi open file
+                else {
+                    score +=openFileRookBonus[0];
+                }
+            }
+        }
     }
 
     return score;
@@ -126,4 +176,34 @@ bool checkInsufficientMaterial(const Position &position) {
     }
 
     return false;
+}
+
+void initEvaluationParameters() {
+    for (std::uint8_t sq = 0; sq < 64; sq++) {
+        Square square {sq};
+        Bitboard adjacent {square};
+        adjacent |= adjacent.west() | adjacent.east();
+
+        Bitboard whiteNextRank = adjacent.north();
+        Bitboard whitePassedPawnSpan{};
+        while (whiteNextRank) {
+            whitePassedPawnSpan |= whiteNextRank;
+            whiteNextRank = whiteNextRank.shift<Direction::North>();
+        }
+
+        Bitboard blackNextRank = adjacent.south();
+        Bitboard blackPassedPawnSpan{};
+        while (blackNextRank) {
+            blackPassedPawnSpan |= blackNextRank;
+            blackNextRank = blackNextRank.shift<Direction::South>();
+        }
+
+        passedPawnSpans[0][sq] = whitePassedPawnSpan;
+        passedPawnSpans[1][sq] = blackPassedPawnSpan;
+    }
+
+    for (std::uint8_t file = 0; file < 8; ++file) {
+        Bitboard fileBitboard = Bitboard::FileBitboard(file);
+        isolatedPawnSpans[file] = fileBitboard.west() | fileBitboard.east();
+    }
 }

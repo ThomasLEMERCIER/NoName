@@ -58,6 +58,7 @@ public:
     constexpr Bitboard south() const { return Bitboard { value >> 8u }; }
     constexpr Bitboard west() const { return Bitboard { value >> 1u } & ~FileBitboard(7); }
 
+    constexpr bool several() const { return value & (value - 1); }
     constexpr std::uint8_t count() const { return popCount(value); }
     constexpr std::uint8_t popLsb() { std::uint8_t index = getLsbIndex(value); value &= value - 1; return index; }
     constexpr std::uint8_t lsb() const { return getLsbIndex(value); }
