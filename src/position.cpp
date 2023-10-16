@@ -288,7 +288,7 @@ std::ostream& operator<<(std::ostream& output, const Position& pos) {
     return output;
 }
 
-bool Position::hasNonPawnMaterial(Color color) {
-    SidePosition& side = (color == Color::White) ? white : black;
+bool Position::hasNonPawnMaterial(Color color) const {
+    const SidePosition& side = (color == Color::White) ? white : black;
     return side.knights != 0 || side.bishops != 0 || side.rooks != 0 || side.queens != 0;
 }

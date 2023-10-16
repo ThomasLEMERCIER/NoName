@@ -148,13 +148,15 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
     if (searchStop || checkStopCondition(threadData.searchLimits, searchStats)) return invalidScore;
 
-    Position& currentPosition = nodeData->position;
-    PvLine& pvLine = nodeData->pvLine;
-    Score oldAlpha = nodeData->alpha;
-    std::int16_t depth = nodeData->depth;
+    const Position& currentPosition = nodeData->position;
+    const Score oldAlpha = nodeData->alpha;
+    const std::int16_t depth = nodeData->depth;
+    const bool inCheck = nodeData->inCheck;
+
     constexpr bool rootNode = nodeType == NodeType::Root;
     constexpr bool pvNode = nodeType == NodeType::Root || nodeType == NodeType::Pv;
 
+    PvLine& pvLine = nodeData->pvLine;
     nodeData->pvLine.pvLength = 0;
     searchStats.negamaxNodeCounter++;
 
@@ -190,34 +192,36 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     childNode.clear();
     childNode.ply = nodeData->ply + 1;
 
-    if (!pvNode && !nodeData->inCheck) {
-        Score eval = evaluate(currentPosition);
+    if constexpr (!pvNode) {
+        if (!inCheck) {
+            Score eval = evaluate(currentPosition);
 
-        if (depth <= reverseFutilityDepth &&
-            eval >= beta &&
-            eval - futilityMargin(depth) >= beta) {
-            return eval;
-        }
+            if (depth <= reverseFutilityDepth &&
+                eval >= beta &&
+                eval - futilityMargin(depth) >= beta) {
+                return eval;
+            }
 
-        if (eval >= beta &&
-            depth >= nullMovePruningStartDepth &&
-            !nodeData->previousMove.isNull() &&
-            currentPosition.hasNonPawnMaterial(currentPosition.sideToMove)) {
+            if (eval >= beta &&
+                depth >= nullMovePruningStartDepth &&
+                !nodeData->previousMove.isNull() &&
+                currentPosition.hasNonPawnMaterial(currentPosition.sideToMove)) {
 
-            std::int16_t reduction = depth / 4 + nullMovePruningDepthReduction;
+                std::int16_t reduction = depth / 4 + nullMovePruningDepthReduction;
 
-            childNode.position = currentPosition;
-            childNode.position.doNullMove();
-            childNode.previousMove = Move::Null();
-            childNode.depth = depth - reduction;
-            childNode.inCheck = false;
-            childNode.alpha = -beta;
-            childNode.beta = -beta + 1;
+                childNode.position = currentPosition;
+                childNode.position.doNullMove();
+                childNode.previousMove = Move::Null();
+                childNode.depth = depth - reduction;
+                childNode.inCheck = false;
+                childNode.alpha = -beta;
+                childNode.beta = -beta + 1;
 
-            Score nullScore = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
+                Score nullScore = -negamax<NodeType::NonPv>(threadData, &childNode, searchStats);
 
-            if (nullScore >= beta) {
-                return (nullScore >= checkmateInMaxPly) ? beta : nullScore;
+                if (nullScore >= beta) {
+                    return (nullScore >= checkmateInMaxPly) ? beta : nullScore;
+                }
             }
         }
     }
@@ -245,23 +249,22 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         childNode.inCheck = childNode.position.isInCheck(childNode.position.sideToMove);
 
         if constexpr (!pvNode) {
-            if (!nodeData->inCheck && quietMoveCount >= lateMovePruningThreshold(depth)) {
+            if (!inCheck && quietMoveCount >= lateMovePruningThreshold(depth)) {
                 skipQuiet = true;
             }
+        }
+
+        std::int16_t depthReduction;
+        if (outMove.isQuiet()) {
+            depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount];
+        }
+        else {
+            depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount] / 2;
         }
 
         Score score;
         if constexpr (pvNode) {
             if (moveCount > 1) {
-                std::int16_t depthReduction;
-
-                if (outMove.isQuiet()) {
-                    depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount];
-                }
-                else {
-                    depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount] / 2;
-                }
-
                 if (depthReduction > 0) {
                     childNode.alpha = -(alpha+1);
                     childNode.beta = -alpha;
@@ -289,15 +292,6 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         }
         else {
             if (moveCount > 1) {
-                std::int16_t depthReduction;
-
-                if (outMove.isQuiet()) {
-                    depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount];
-                }
-                else {
-                    depthReduction = lateMoveReductionTable[std::min<std::int16_t>(depth, 63)][moveCount] / 2;
-                }
-
                 if (depthReduction > 0) {
                     childNode.alpha = -(alpha+1);
                     childNode.beta = -alpha;
@@ -371,8 +365,8 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
 
     if (searchStop || checkStopCondition(threadData.searchLimits, searchStats)) return invalidScore;
 
-    Position& currentPosition = nodeData->position;
-    Score oldAlpha = nodeData->alpha;
+    const Position& currentPosition = nodeData->position;
+    const Score oldAlpha = nodeData->alpha;
 
     searchStats.quiescenceNodeCounter++;
 
