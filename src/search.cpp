@@ -244,8 +244,8 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         childNode.previousMove = outMove;
         childNode.inCheck = childNode.position.isInCheck(childNode.position.sideToMove);
 
-        if constexpr (!rootNode) {
-            if (quietMoveCount >= lateMovePruningThreshold(depth)) {
+        if constexpr (!pvNode) {
+            if (!nodeData->inCheck && quietMoveCount >= lateMovePruningThreshold(depth)) {
                 skipQuiet = true;
             }
         }
@@ -492,7 +492,7 @@ void Search::updateQuietMoveHistory(ThreadData &threadData, NodeData *nodeData, 
 }
 
 constexpr std::uint32_t Search::lateMovePruningThreshold(std::int16_t depth) {
-    return depth * scaleLateMovePruning + baseLateMovePruning;
+    return depth * depth + baseLateMovePruning;
 }
 
 void initSearchParameters() {
