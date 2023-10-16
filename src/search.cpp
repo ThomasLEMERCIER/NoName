@@ -224,6 +224,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
     MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable};
     std::uint8_t moveCount = 0;
+    std::uint8_t quietMoveCount = 0;
     Move outMove;
 
     Score bestScore = -infValue;
@@ -232,14 +233,22 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     childNode.clear();
     childNode.ply = nodeData->ply + 1;
 
-    while (moveSorter.nextMove(outMove)) {
+    bool skipQuiet = false;
+    while (moveSorter.nextMove(outMove, skipQuiet)) {
         childNode.position = currentPosition;
         if (!childNode.position.makeMove(outMove))
             continue;
 
         moveCount++;
+        if (outMove.isQuiet()) quietMoveCount++;
         childNode.previousMove = outMove;
         childNode.inCheck = childNode.position.isInCheck(childNode.position.sideToMove);
+
+        if constexpr (!pvNode) {
+            if (!nodeData->inCheck && quietMoveCount >= lateMovePruningThreshold(depth)) {
+                skipQuiet = true;
+            }
+        }
 
         Score score;
         if constexpr (pvNode) {
@@ -399,7 +408,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     if (alpha < bestScore)
         alpha = bestScore;
 
-    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable, true};
+    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable};
     Move outMove;
     Move bestMove = Move::Invalid();
 
@@ -407,7 +416,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     childNode.clear();
     childNode.ply = nodeData->ply + 1;
 
-    while (moveSorter.nextMove(outMove)) {
+    while (moveSorter.nextMove(outMove, true)) {
         childNode.position = currentPosition;
         if (!childNode.position.makeMove(outMove))
             continue;
@@ -471,7 +480,7 @@ bool Search::isRepetition(NodeData* nodeData, const Game* game) {
     return game->checkRepetition(targetHash);
 }
 
-Score Search::futilityMargin(std::int16_t depth) {
+constexpr Score Search::futilityMargin(std::int16_t depth) {
     return baseFutilityMargin + scaleFutilityMargin * depth;
 }
 
@@ -480,6 +489,10 @@ void Search::updateQuietMoveHistory(ThreadData &threadData, NodeData *nodeData, 
     const Color sideToMove = nodeData->position.sideToMove;
 
     threadData.moveHistoryTable[static_cast<std::uint8_t>(sideToMove)][bestMove.getFrom().index()][bestMove.getTo().index()] += bonus;
+}
+
+constexpr std::uint32_t Search::lateMovePruningThreshold(std::int16_t depth) {
+    return scaleLateMovePruning * depth + baseLateMovePruning;
 }
 
 void initSearchParameters() {

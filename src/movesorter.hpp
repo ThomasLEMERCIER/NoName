@@ -28,15 +28,12 @@ private:
     MoveSorterStage currentStage = MoveSorterStage::TTMove;
     std::uint32_t indexMoveList = 0;
 
-    bool onlyNonQuiets = false;
-
     void scoreNonQuiets();
     void scoreQuiets();
 
     Move nextSortedMove();
 public:
-    bool nextMove(Move& outMove);
+    bool nextMove(Move& outMove, bool skipQuiet);
 
     MoveSorter(const Position& pos, const Move& move, const MoveHistoryTable& historyTable) : position{pos}, ttMove{move}, quietHistoryTable{historyTable} {};
-    MoveSorter(const Position& pos, const Move& move, const MoveHistoryTable& historyTable, bool inQuiescence) : position{pos}, ttMove{move}, quietHistoryTable{historyTable}, onlyNonQuiets{inQuiescence} {};
 };
