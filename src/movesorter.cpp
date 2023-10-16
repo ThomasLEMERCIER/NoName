@@ -58,13 +58,18 @@ void MoveSorter::scoreNonQuiets() {
         if (move.isCapture()) {
             PieceType attacker = getPieceType(move.getPiece());
             PieceType victim = getPieceType(position.pieceAt(move.getTo()));
-
             moveList[count].score = 6 * static_cast<std::int32_t>(victim) - static_cast<std::int32_t>(attacker);
+
+            // bonus for promotion
+            if (move.isPromotion()) {
+                PieceType promotionPiece = getPieceType(move.getPromotionPiece());
+                moveList[count].score += promotionValues[static_cast<std::uint8_t>(promotionPiece)];
+            }
         }
-        // bonus for promotion
-        if (move.isPromotion()) {
+        // promotion without capture
+        else {
             PieceType promotionPiece = getPieceType(move.getPromotionPiece());
-            moveList[count].score += promotionValues[static_cast<std::uint8_t>(promotionPiece)];
+            moveList[count].score = promotionValues[static_cast<std::uint8_t>(promotionPiece)];
         }
     }
 }
