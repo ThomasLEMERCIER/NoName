@@ -492,7 +492,7 @@ void Search::updateQuietMoveHistory(ThreadData &threadData, NodeData *nodeData, 
 }
 
 constexpr std::uint32_t Search::lateMovePruningThreshold(std::int16_t depth) {
-    return depth * depth + baseLateMovePruning;
+    return scaleLateMovePruning * depth + baseLateMovePruning;
 }
 
 void initSearchParameters() {

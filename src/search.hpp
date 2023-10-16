@@ -27,6 +27,7 @@ constexpr Score baseFutilityMargin = 10;
 constexpr Score scaleFutilityMargin = 75;
 
 constexpr std::uint32_t baseLateMovePruning = 3;
+constexpr std::uint32_t scaleLateMovePruning = 8;
 
 void initSearchParameters();
 
