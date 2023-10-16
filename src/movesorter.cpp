@@ -53,10 +53,19 @@ bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
 
 void MoveSorter::scoreNonQuiets() {
     for (std::uint32_t count = indexMoveList; count < moveList.getSize(); ++count) {
-        PieceType attacker = getPieceType(moveList[count].move.getPiece());
-        PieceType victim = getPieceType(position.pieceAt(moveList[count].move.getTo()));
+        const Move &move = moveList[count].move;
+        // mvv-lva for captures
+        if (move.isCapture()) {
+            PieceType attacker = getPieceType(move.getPiece());
+            PieceType victim = getPieceType(position.pieceAt(move.getTo()));
 
-        moveList[count].score = 6 * static_cast<std::int32_t>(victim) - static_cast<std::int32_t>(attacker);
+            moveList[count].score = 6 * static_cast<std::int32_t>(victim) - static_cast<std::int32_t>(attacker);
+        }
+        // bonus for promotion
+        if (move.isPromotion()) {
+            PieceType promotionPiece = getPieceType(move.getPromotionPiece());
+            moveList[count].score += promotionValues[static_cast<std::uint8_t>(promotionPiece)];
+        }
     }
 }
 
