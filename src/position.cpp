@@ -151,6 +151,7 @@ bool Position::makeMove(const Move move) {
     const bool doublePush = move.isDoublePush();
     const bool enpassant = move.isEnpassant();
     const bool castling = move.isCastling();
+    const bool promotion = move.isPromotion();
 
     const Square from = move.getFrom();
     const Square to = move.getTo();
@@ -192,7 +193,7 @@ bool Position::makeMove(const Move move) {
             enPassantSquare = Square(enpassantRank, to.file());
             hash ^= enPassantFileZobristHash[enPassantSquare.file()];
         }
-        else if (promotionPiece != static_cast<Piece>(0)) {
+        else if (promotion) {
             removePiece(sideToMove, PieceType::Pawn, to);
             setPiece(sideToMove, promotionPieceType, to);
         }
