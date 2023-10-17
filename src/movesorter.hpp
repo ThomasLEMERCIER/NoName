@@ -7,6 +7,8 @@
 #include <array>
 #include <cstdint>
 
+constexpr std::int32_t promotionValues[6] = { 0, 5000, -10000, -10000, 10000, 0 };
+
 enum class MoveSorterStage : std::uint8_t {
     TTMove,
     GeneratingNonQuiets,
