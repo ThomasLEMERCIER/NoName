@@ -14,7 +14,6 @@ bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
             [[fallthrough]];
         case MoveSorterStage::GeneratingNonQuiets:
             generateMoves<MoveType::NonQuietMoves>(moveList, position);
-
             moveList.filter(ttMove);
             scoreNonQuiets();
 
@@ -32,8 +31,25 @@ bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
             [[fallthrough]];
         case MoveSorterStage::GeneratingQuiets:
             generateMoves<MoveType::QuietMoves>(moveList, position);
-
             moveList.filter(ttMove);
+
+            currentStage = MoveSorterStage::Killer1;
+            [[fallthrough]];
+        case MoveSorterStage::Killer1:
+            currentStage = MoveSorterStage::Killer2;
+            if (moveList.filter(killerMoves.killer1)) {
+                outMove = killerMoves.killer1;
+                return true;
+            }
+            [[fallthrough]];
+        case MoveSorterStage::Killer2:
+            currentStage = MoveSorterStage::OrderingQuiets;
+            if (moveList.filter(killerMoves.killer2)) {
+                outMove = killerMoves.killer2;
+                return true;
+            }
+            [[fallthrough]];
+        case MoveSorterStage::OrderingQuiets:
             scoreQuiets();
 
             currentStage = MoveSorterStage::Quiets;
@@ -62,7 +78,7 @@ void MoveSorter::scoreNonQuiets() {
 
 void MoveSorter::scoreQuiets() {
     for (std::uint32_t count = indexMoveList; count < moveList.getSize(); ++count) {
-        Move move = moveList[count].move;
+        const Move& move = moveList[count].move;
         moveList[count].score = quietHistoryTable[static_cast<std::uint8_t>(position.sideToMove)][move.getFrom().index()][move.getTo().index()];
     }
 }

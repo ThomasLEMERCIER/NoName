@@ -94,6 +94,7 @@ struct ThreadData {
     SearchStats searchStats;
 
     MoveHistoryTable moveHistoryTable;
+    KillerMoveTable killerMoveTable;
 };
 
 class Search {
@@ -113,7 +114,7 @@ private:
     static bool isRepetition(NodeData* nodeData, const Game* game);
     static constexpr Score futilityMargin(std::int16_t depth);
     static constexpr std::uint32_t lateMovePruningThreshold(std::int16_t depth);
-    static void updateQuietMoveHistory(ThreadData& threadData, NodeData* nodeData, Move bestMove);
+    static void updateQuietMoveOrdering(ThreadData& threadData, NodeData* nodeData, Move bestMove);
 
     template<NodeType nodeType>
     Score negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
