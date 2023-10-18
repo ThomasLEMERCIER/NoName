@@ -15,6 +15,7 @@ enum class MoveSorterStage : std::uint8_t {
     Quiets
 };
 
+constexpr std::int32_t historyBound = 32000;
 using MoveHistoryTable = std::array<std::array<std::array<std::int32_t, 64>, 64>, 2>;
 
 class MoveSorter {

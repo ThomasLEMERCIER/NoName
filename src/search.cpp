@@ -479,10 +479,13 @@ constexpr Score Search::futilityMargin(std::int16_t depth) {
 }
 
 void Search::updateQuietMoveHistory(ThreadData &threadData, NodeData *nodeData, Move bestMove) {
-    std::int32_t bonus = (nodeData->depth * nodeData->depth);
+    // history bonus scaled to be in [0, historyBound (32000)] to go after killer heuristic
     const Color sideToMove = nodeData->position.sideToMove;
+    int &history = threadData.moveHistoryTable[static_cast<std::uint8_t>(sideToMove)][bestMove.getFrom().index()][bestMove.getTo().index()];
 
-    threadData.moveHistoryTable[static_cast<std::uint8_t>(sideToMove)][bestMove.getFrom().index()][bestMove.getTo().index()] += bonus;
+    std::int32_t bonus = (nodeData->depth * nodeData->depth);
+    std::int32_t scaledBonus = bonus - history * bonus / historyBound;
+    history += scaledBonus;
 }
 
 constexpr std::uint32_t Search::lateMovePruningThreshold(std::int16_t depth) {
