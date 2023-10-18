@@ -23,6 +23,7 @@ void Search::startSearch(const Game& game, const SearchLimits& searchLimits) {
     data.searchStats = {};
 
     data.moveHistoryTable = {};
+    data.killerMoveTable = {};
 
     // launching search on thread
     searchStop = false;
@@ -191,6 +192,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     NodeData& childNode = *(nodeData + 1);
     childNode.clear();
     childNode.ply = nodeData->ply + 1;
+    threadData.killerMoveTable[nodeData->ply + 1].clear();
 
     if constexpr (!pvNode) {
         if (!inCheck) {
@@ -226,7 +228,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         }
     }
 
-    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable};
+    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable, threadData.killerMoveTable[nodeData->ply]};
     std::uint8_t moveCount = 0;
     std::uint8_t quietMoveCount = 0;
     Move outMove;
@@ -349,7 +351,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
 
     if (bestScore >= beta) {
         if (bestMove.isQuiet()) {
-            updateQuietMoveHistory(threadData, nodeData, bestMove);
+            updateQuietMoveOrdering(threadData, nodeData, bestMove);
         }
     }
 
@@ -402,7 +404,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     if (alpha < bestScore)
         alpha = bestScore;
 
-    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable};
+    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable, threadData.killerMoveTable[nodeData->ply]};
     Move outMove;
     Move bestMove = Move::Invalid();
 
@@ -478,11 +480,20 @@ constexpr Score Search::futilityMargin(std::int16_t depth) {
     return baseFutilityMargin + scaleFutilityMargin * depth;
 }
 
-void Search::updateQuietMoveHistory(ThreadData &threadData, NodeData *nodeData, Move bestMove) {
-    std::int32_t bonus = (nodeData->depth * nodeData->depth);
+void Search::updateQuietMoveOrdering(ThreadData &threadData, NodeData *nodeData, Move bestMove) {
+    // history heuristic
     const Color sideToMove = nodeData->position.sideToMove;
+    std::int32_t &history = threadData.moveHistoryTable[static_cast<std::uint8_t>(sideToMove)][bestMove.getFrom().index()][bestMove.getTo().index()];
 
-    threadData.moveHistoryTable[static_cast<std::uint8_t>(sideToMove)][bestMove.getFrom().index()][bestMove.getTo().index()] += bonus;
+    std::int32_t bonus = (nodeData->depth * nodeData->depth);
+    history += bonus;
+
+    // killer heuristic
+    KillerMoves &killerMoves = threadData.killerMoveTable[nodeData->ply];
+    if (bestMove != killerMoves.killer1) {
+        killerMoves.killer2 = killerMoves.killer1;
+        killerMoves.killer1 = bestMove;
+    }
 }
 
 constexpr std::uint32_t Search::lateMovePruningThreshold(std::int16_t depth) {

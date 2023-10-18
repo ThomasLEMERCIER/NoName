@@ -56,13 +56,14 @@ public:
     std::uint32_t getSize() const { return size; }
     MoveExt& operator[](const std::uint32_t index) { return moves[index]; }
 
-    void filter(const Move move) {
+    bool filter(const Move move) {
         for (std::uint32_t i = 0; i < size; ++i) {
             if (moves[i].move == move) {
                 moves[i] = moves[--size];
-                break;
+                return true;
             }
         }
+        return false;
     };
 
     friend std::ostream& operator<<(std::ostream& output, const MoveList& moveList) {

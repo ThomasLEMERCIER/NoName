@@ -29,11 +29,11 @@ private:
     std::uint32_t value;
 
 public:
-    static Move Invalid() { return {0}; }
-    static Move Null() { return {UINT32_MAX}; }
+    static constexpr Move Invalid() { return {}; }
+    static constexpr Move Null() { return {UINT32_MAX}; }
 
-    Move() : value(0) {};
-    Move(const std::uint32_t val) : value(val) {};
+    constexpr Move() : value(0) {};
+    constexpr Move(const std::uint32_t val) : value(val) {};
 
     Move(Square from, Square to, Piece piece, Piece promotionPiece, bool capture, bool doublePush, bool enpassant, bool castling) :
                                                                                     value((static_cast<std::uint32_t>(from.index())) |
