@@ -95,6 +95,7 @@ struct ThreadData {
 
     MoveHistoryTable moveHistoryTable;
     KillerMoveTable killerMoveTable;
+    CounterMoveTable counterMoveTable;
 };
 
 class Search {

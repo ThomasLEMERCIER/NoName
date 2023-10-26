@@ -14,6 +14,7 @@ enum class MoveSorterStage : std::uint8_t {
     GeneratingQuiets,
     Killer1,
     Killer2,
+    CounterMove,
     OrderingQuiets,
     Quiets
 };
@@ -30,6 +31,7 @@ struct KillerMoves {
 
 using MoveHistoryTable = std::array<std::array<std::array<std::int32_t, 64>, 64>, 2>;
 using KillerMoveTable = std::array<KillerMoves, maxSearchDepth>;
+using CounterMoveTable = std::array<std::array<Move, 64>, 12>;
 
 class MoveSorter {
 private:
@@ -39,6 +41,7 @@ private:
     const Move ttMove;
     const MoveHistoryTable& quietHistoryTable;
     const KillerMoves& killerMoves;
+    const Move counterMove;
 
     MoveSorterStage currentStage = MoveSorterStage::TTMove;
     std::uint32_t indexMoveList = 0;
@@ -50,5 +53,5 @@ private:
 public:
     bool nextMove(Move& outMove, bool skipQuiet);
 
-    MoveSorter(const Position& pos, const Move& move, const MoveHistoryTable& historyTable, const KillerMoves& killers) : position{pos}, ttMove{move}, quietHistoryTable{historyTable}, killerMoves{killers} {};
+    MoveSorter(const Position& pos, const Move& move, const MoveHistoryTable& historyTable, const KillerMoves& killers, const Move& counter) : position{pos}, ttMove{move}, quietHistoryTable{historyTable}, killerMoves{killers}, counterMove{counter} {};
 };
