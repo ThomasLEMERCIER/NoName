@@ -104,9 +104,13 @@ public:
         if constexpr (color == Color::Black) { return black.occupied; }
     }
 
+
+    Bitboard getPieces(const Color color, const PieceType pieceType) const;
+
     template<Color color>
     bool isSquareAttackedBy(const Square square) const;                           // check if square is attacked by given color
     bool isInCheck(const Color color) const;                                      // check if given color is in check
+    Bitboard getAttackers(Square square, const Bitboard occupied) const;          // get all attackers of given square
 
     std::uint64_t computeHash();
     friend std::ostream& operator<<(std::ostream& output, const Position& pos);     // output operator

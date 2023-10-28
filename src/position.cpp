@@ -96,6 +96,12 @@ void Position::removePiece(const Color color, const PieceType piece, const Squar
     hash ^= getPieceSquareHash(color, piece, square);
 }
 
+Bitboard Position::getPieces(const Color color, const PieceType pieceType) const {
+    if (color == Color::White) return white[pieceType];
+    else                       return black[pieceType];
+
+}
+
 Piece Position::pieceAt(const Square square) const {
     Bitboard mask { square };
 
@@ -139,6 +145,23 @@ bool Position::isSquareAttackedBy(const Square square) const {
     }
 
     return false;
+}
+
+Bitboard Position::getAttackers(Square square, const Bitboard occ) const {
+    const Bitboard knights  = white.knights | black.knights;
+    const Bitboard bishops  = white.bishops | black.bishops;
+    const Bitboard rooks    = white.rooks   | black.rooks;
+    const Bitboard queens   = white.queens  | black.queens;
+    const Bitboard kings    = white.king    | black.king;
+
+    Bitboard bitboard           = getKingAttacks(square) & kings;
+    if (knights)                bitboard |= getKnightAttacks(square) & knights;
+    if (rooks | queens)         bitboard |= getRookAttacks(square, occ) & (rooks | queens);
+    if (bishops | queens)       bitboard |= getBishopAttacks(square, occ) & (bishops | queens);
+    if (white.pawns)   bitboard |= getPawnAttacks(square, Color::Black) & white.pawns;
+    if (black.pawns)   bitboard |= getPawnAttacks(square, Color::White) & black.pawns;
+
+    return bitboard;
 }
 
 bool Position::isInCheck(const Color color) const {
