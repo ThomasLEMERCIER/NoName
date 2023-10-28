@@ -29,11 +29,11 @@ private:
     std::uint32_t value;
 
 public:
-    static Move Invalid() { return {0}; }
-    static Move Null() { return {UINT32_MAX}; }
+    static constexpr Move Invalid() { return {}; }
+    static constexpr Move Null() { return {UINT32_MAX}; }
 
-    Move() : value(0) {};
-    Move(const std::uint32_t val) : value(val) {};
+    constexpr Move() : value(0) {};
+    constexpr Move(const std::uint32_t val) : value(val) {};
 
     Move(Square from, Square to, Piece piece, Piece promotionPiece, bool capture, bool doublePush, bool enpassant, bool castling) :
                                                                                     value((static_cast<std::uint32_t>(from.index())) |
@@ -62,8 +62,9 @@ public:
     constexpr bool isDoublePush() const { return (value >> 21) & 0x1; }
     constexpr bool isEnpassant() const { return (value >> 22) & 0x1; }
     constexpr bool isCastling() const { return (value >> 23) & 0x1; }
+    constexpr bool isPromotion() const { return getPromotionPiece() != static_cast<Piece>(0); }
 
-    constexpr bool isQuiet() const { return !isCapture() && getPromotionPiece() == static_cast<Piece>(0); }
+    constexpr bool isQuiet() const { return !isCapture() && !isPromotion(); }
     constexpr bool isValid() const { return value != 0u; }
     constexpr bool isNull() const { return value == UINT32_MAX; }
 
@@ -73,7 +74,7 @@ public:
         if (!move.isValid()) {
             std::cout << "INVALID MOVE"; return output;
         }
-        if (move.getPromotionPiece() != static_cast<Piece>(0)) {
+        if (move.isPromotion()) {
             output << move.getFrom() << move.getTo() << pieceNames[static_cast<std::uint8_t>(move.getPromotionPiece())];
         }
         else {

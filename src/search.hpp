@@ -2,6 +2,7 @@
 
 #include "game.hpp"
 #include "move.hpp"
+#include "movesorter.hpp"
 #include "position.hpp"
 #include "transpositiontable.hpp"
 #include "utils.hpp"
@@ -24,6 +25,9 @@ extern std::uint8_t lateMoveReductionTable[64][64];
 constexpr std::int16_t reverseFutilityDepth = 8;
 constexpr Score baseFutilityMargin = 10;
 constexpr Score scaleFutilityMargin = 75;
+
+constexpr std::uint32_t baseLateMovePruning = 3;
+constexpr std::uint32_t scaleLateMovePruning = 8;
 
 void initSearchParameters();
 
@@ -88,6 +92,9 @@ struct ThreadData {
 
     bool isMainThread;
     SearchStats searchStats;
+
+    MoveHistoryTable moveHistoryTable;
+    KillerMoveTable killerMoveTable;
 };
 
 class Search {
@@ -105,7 +112,9 @@ private:
     bool checkStopCondition(SearchLimits& searchLimits, SearchStats& searchStats);
 
     static bool isRepetition(NodeData* nodeData, const Game* game);
-    static Score futilityMargin(std::int16_t depth);
+    static constexpr Score futilityMargin(std::int16_t depth);
+    static constexpr std::uint32_t lateMovePruningThreshold(std::int16_t depth);
+    static void updateQuietMoveOrdering(ThreadData& threadData, NodeData* nodeData, Move bestMove);
 
     template<NodeType nodeType>
     Score negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& searchStats);
@@ -120,6 +129,7 @@ private:
     // Thread specific data
     ThreadData data;
     std::thread thread;
+
 
 };
 

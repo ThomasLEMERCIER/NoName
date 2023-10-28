@@ -88,7 +88,7 @@ public:
     bool makeMove(const Move move);                                                // make move on position
 
     bool doNullMove();
-    bool hasNonPawnMaterial(Color color);
+    bool hasNonPawnMaterial(Color color) const;
 
     template<Piece piece>
     constexpr Bitboard getPieces() const {

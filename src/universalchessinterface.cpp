@@ -154,10 +154,15 @@ void UniversalChessInterface::bench() {
         ThreadData threadData;
         threadData.searchLimits = searchLimits;
         threadData.game = &game;
+
+        threadData.searchStack[0].position = position;
+        threadData.searchStack[0].inCheck = position.isInCheck(position.sideToMove);
+
         threadData.isMainThread = true;
-        threadData.searchStack = {};
         threadData.searchStats = {};
-        threadData.searchStack[0].position = game.getCurrentPosition();
+
+        threadData.moveHistoryTable = {};
+        threadData.killerMoveTable = {};
 
         search.setStopSearchFlag(false);
         search.searchInternal(threadData);
