@@ -440,11 +440,6 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
         }
     }
 
-    if(!searchStop) {
-        Bound bound = (bestScore >= beta) ? Bound::Lower : (bestScore > oldAlpha) ? Bound::Exact : Bound::Upper;
-        transpositionTable.writeEntry(currentPosition, 0, TranspositionTable::ScoreToTT(bestScore, nodeData->ply), bestMove, bound);
-    }
-
     return bestScore;
 }
 
