@@ -46,3 +46,7 @@ void TranspositionTable::clear() {
         table[index] = {};
     }
 }
+
+void TranspositionTable::prefetchTable(std::uint64_t hash) {
+    __builtin_prefetch(&table[hash % size]);
+}
