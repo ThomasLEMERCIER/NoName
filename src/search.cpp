@@ -245,6 +245,8 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         if (!childNode.position.makeMove(outMove))
             continue;
 
+        transpositionTable.prefetchTable(childNode.position.hash);
+
         moveCount++;
         if (outMove.isQuiet()) quietMoveCount++;
         childNode.previousMove = outMove;
