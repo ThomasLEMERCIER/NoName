@@ -23,10 +23,10 @@ bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
             currentStage = MoveSorterStage::GoodNonQuiets;
             [[fallthrough]];
         case MoveSorterStage::GoodNonQuiets:
-            bestIndex = nextSortedIndex<Filter::BadNonQuiets>(currentIndex, moveList.getSize());
+            bestIndex = nextSortedIndex(currentIndex, moveList.getSize());
 
             // no more good non quiets
-            if (bestIndex == MoveSorter::InvalidIndex) {
+            if (moveList[bestIndex].score < GoodNonQuietScore) {
                 badNonQuietsIndex = currentIndex;
             }
             // good non-quiet
@@ -73,7 +73,7 @@ bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
             [[fallthrough]];
         case MoveSorterStage::Quiets:
             if (!skipQuiet && currentIndex < moveList.getSize()) {
-                bestIndex = nextSortedIndex<Filter::None>(currentIndex, moveList.getSize());
+                bestIndex = nextSortedIndex(currentIndex, moveList.getSize());
                 outMove = pop(bestIndex);
                 return true;
             }
@@ -84,7 +84,7 @@ bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
             [[fallthrough]];
         case MoveSorterStage::BadNonQuiets:
             if (currentIndex < quietMoveIndex) {
-                bestIndex = nextSortedIndex<Filter::None>(currentIndex, quietMoveIndex);
+                bestIndex = nextSortedIndex(currentIndex, quietMoveIndex);
                 outMove = pop(bestIndex);
                 return true;
             }
@@ -101,6 +101,10 @@ void MoveSorter::scoreNonQuiets() {
         PieceType victim = getPieceType(position.pieceAt(moveList[index].move.getTo()));
 
         moveList[index].score = 6 * static_cast<std::int32_t>(victim) - static_cast<std::int32_t>(attacker);
+
+        if (staticExchangeEvaluation(position, moveList[index].move, MoveSorter::GoodNonQuietThreshold)) {
+            moveList[index].score += MoveSorter::GoodNonQuietScoreBonus;
+        }
     }
 }
 
@@ -116,18 +120,10 @@ Move MoveSorter::pop(std::uint32_t index) {
     return moveList[currentIndex++].move;
 }
 
-template<Filter filter>
 std::uint32_t MoveSorter::nextSortedIndex(std::uint32_t start, std::uint32_t end) {
-    std::uint32_t bestIndex = MoveSorter::InvalidIndex;
-    for (std::uint32_t index = start; index < end; index++) {
-        if (bestIndex == MoveSorter::InvalidIndex || moveList[index].score > moveList[bestIndex].score) {
-            if constexpr (filter == Filter::BadNonQuiets) {
-                if (!staticExchangeEvaluation(position, moveList[index].move, MoveSorter::GoodNonQuietThreshold)) {
-                    continue;
-                }
-            }
-            bestIndex = index;
-        }
+    std::uint32_t bestIndex = start;
+    for (std::uint32_t index = start + 1; index < end; index++) {
+        if (moveList[index].score > moveList[bestIndex].score) bestIndex = index;
     }
     return bestIndex;
 }
