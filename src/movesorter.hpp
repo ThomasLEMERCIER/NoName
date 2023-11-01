@@ -10,12 +10,18 @@
 enum class MoveSorterStage : std::uint8_t {
     TTMove,
     GeneratingNonQuiets,
-    NonQuiets,
+    GoodNonQuiets,
     GeneratingQuiets,
     Killer1,
     Killer2,
     OrderingQuiets,
-    Quiets
+    Quiets,
+    BadNonQuiets,
+};
+
+enum class Filter : std::uint8_t {
+    BadNonQuiets,
+    None,
 };
 
 struct KillerMoves {
@@ -41,12 +47,20 @@ private:
     const KillerMoves& killerMoves;
 
     MoveSorterStage currentStage = MoveSorterStage::TTMove;
-    std::uint32_t indexMoveList = 0;
+
+    std::uint32_t currentIndex      = 0;
+    std::uint32_t badNonQuietsIndex = 0;
+    std::uint32_t quietMoveIndex    = 0;
 
     void scoreNonQuiets();
     void scoreQuiets();
 
-    Move nextSortedMove();
+    template<Filter filter>
+    std::uint32_t nextSortedIndex(std::uint32_t start, std::uint32_t end) ;
+    Move pop(std::uint32_t index);
+
+    constexpr static std::int32_t GoodNonQuietThreshold = -103;
+    constexpr static std::uint32_t InvalidIndex = UINT32_MAX;
 public:
     bool nextMove(Move& outMove, bool skipQuiet);
 

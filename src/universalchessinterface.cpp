@@ -7,6 +7,7 @@
 #include "perft.hpp"
 #include "piece.hpp"
 #include "timeman.hpp"
+#include "see.hpp"
 
 #include <cstdint>
 #include <sstream>
@@ -217,6 +218,7 @@ void UniversalChessInterface::loop(int argc, char **argv) {
         else if (token == "bench")      bench();
         else if (token == "perft")      parsePerft(ss);
         else if (token == "eval")       std::cout << "Evaluation value: " << evaluate(game.getCurrentPosition()) << std::endl;
+        else if (token == "see")        testSee(game.getCurrentPosition());
         else if (token == "setoption")  parseSetOption(ss);
     }
 
