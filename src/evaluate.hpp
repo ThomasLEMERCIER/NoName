@@ -119,6 +119,8 @@ constexpr const ScoreExt* pieceSquareTable[6] = {
         kingSquareTable
 };
 
+constexpr Score tempoBonus = 10;
+
 constexpr std::int32_t knightPhaseValue = 1;
 constexpr std::int32_t bishopPhaseValue = 1;
 constexpr std::int32_t rookPhaseValue   = 2;

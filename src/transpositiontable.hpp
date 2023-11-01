@@ -28,6 +28,7 @@ public:
 
     void initTable(std::uint64_t newMemorySize);
     void writeEntry(const Position& position, std::int16_t depth, ScoreTT score, Move move, Bound bound);
+    void prefetchTable(std::uint64_t hash);
     bool probeTable(std::uint64_t hash, TTEntry& outEntry);
     void clear();
 

@@ -24,7 +24,7 @@ Score evaluate(const Position &position) {
     Score evaluation = interpolateScore(finalScore, evaluationData);
 
     evaluation = (position.sideToMove == Color::White) ? evaluation : -evaluation;
-    return evaluation;
+    return evaluation + tempoBonus;
 }
 
 void evaluatePhase(EvaluationData& evaluationData) {
