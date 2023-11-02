@@ -259,7 +259,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
                     skipQuiet = true;
                 }
 
-                if (depth <= seePruningDepth) {
+                if (depth <= seePruningDepth && bestScore > -checkmateInMaxPly) {
                     if (outMove.isQuiet()) {
                         if (!staticExchangeEvaluation(currentPosition, outMove, scaleQuietSeePruning * depth * depth)) {
                             continue;
