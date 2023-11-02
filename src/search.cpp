@@ -240,7 +240,7 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
     childNode.ply = nodeData->ply + 1;
 
     bool skipQuiet = false;
-    while (moveSorter.nextMove(outMove, skipQuiet)) {
+    while (moveSorter.nextMove(outMove, skipQuiet, false)) {
         childNode.position = currentPosition;
         if (!childNode.position.makeMove(outMove))
             continue;
@@ -414,7 +414,7 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     childNode.clear();
     childNode.ply = nodeData->ply + 1;
 
-    while (moveSorter.nextMove(outMove, true)) {
+    while (moveSorter.nextMove(outMove, true, true)) {
         childNode.position = currentPosition;
         if (!childNode.position.makeMove(outMove))
             continue;

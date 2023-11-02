@@ -4,7 +4,7 @@
 #include "piece.hpp"
 #include "see.hpp"
 
-bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
+bool MoveSorter::nextMove(Move& outMove, bool skipQuiet, bool skipBadNonQuiet) {
     std::uint32_t bestIndex = MoveSorter::InvalidIndex;
 
     switch (currentStage) {
@@ -83,7 +83,7 @@ bool MoveSorter::nextMove(Move& outMove, bool skipQuiet) {
             }
             [[fallthrough]];
         case MoveSorterStage::BadNonQuiets:
-            if (currentIndex < quietMoveIndex) {
+            if (!skipBadNonQuiet && currentIndex < quietMoveIndex) {
                 bestIndex = nextSortedIndex(currentIndex, quietMoveIndex);
                 outMove = pop(bestIndex);
                 return true;

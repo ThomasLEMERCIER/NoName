@@ -61,7 +61,7 @@ private:
 
 
 public:
-    bool nextMove(Move& outMove, bool skipQuiet);
+    bool nextMove(Move& outMove, bool skipQuiet, bool skipBadNonQuiet);
 
     MoveSorter(const Position& pos, const Move& move, const MoveHistoryTable& historyTable, const KillerMoves& killers) : position{pos}, ttMove{move}, quietHistoryTable{historyTable}, killerMoves{killers} {};
 };
