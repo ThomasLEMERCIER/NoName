@@ -19,11 +19,6 @@ enum class MoveSorterStage : std::uint8_t {
     BadNonQuiets,
 };
 
-enum class Filter : std::uint8_t {
-    BadNonQuiets,
-    None,
-};
-
 struct KillerMoves {
     Move killer1 = Move::Invalid();
     Move killer2 = Move::Invalid();
@@ -55,12 +50,16 @@ private:
     void scoreNonQuiets();
     void scoreQuiets();
 
-    template<Filter filter>
     std::uint32_t nextSortedIndex(std::uint32_t start, std::uint32_t end) ;
     Move pop(std::uint32_t index);
 
     constexpr static std::int32_t GoodNonQuietThreshold = -103;
     constexpr static std::uint32_t InvalidIndex = UINT32_MAX;
+
+    constexpr static std::int32_t GoodNonQuietScoreBonus = 50000;
+    constexpr static std::int32_t GoodNonQuietScore = 40000;
+
+
 public:
     bool nextMove(Move& outMove, bool skipQuiet);
 
