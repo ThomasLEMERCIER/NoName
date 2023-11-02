@@ -1,6 +1,7 @@
 #include "search.hpp"
 
 #include "evaluate.hpp"
+#include "see.hpp"
 
 #include <cmath>
 
@@ -253,8 +254,21 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         childNode.inCheck = childNode.position.isInCheck(childNode.position.sideToMove);
 
         if constexpr (!pvNode) {
-            if (!inCheck && quietMoveCount >= lateMovePruningThreshold(depth)) {
-                skipQuiet = true;
+            if (!inCheck) {
+                if(quietMoveCount >= lateMovePruningThreshold(depth)) {
+                    skipQuiet = true;
+                }
+
+                if (depth <= seePruningDepth) {
+                    if (outMove.isQuiet()) {
+                        if (!staticExchangeEvaluation(currentPosition, outMove, scaleQuietSeePruning * depth * depth)) {
+                            continue;
+                        }
+                    }
+                    else {
+                        if (!staticExchangeEvaluation(currentPosition, outMove, scaleNonQuietSeePruning * depth)) continue;
+                    }
+                }
             }
         }
 
