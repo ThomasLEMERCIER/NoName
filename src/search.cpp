@@ -25,6 +25,7 @@ void Search::startSearch(const Game& game, const SearchLimits& searchLimits) {
 
     data.moveHistoryTable = {};
     data.killerMoveTable = {};
+    data.counterMoveTable = {};
 
     // launching search on thread
     searchStop = false;
@@ -33,9 +34,10 @@ void Search::startSearch(const Game& game, const SearchLimits& searchLimits) {
 
 void Search::searchInternal(ThreadData& threadData) {
     NodeData &rootNode = threadData.searchStack[0];
+    rootNode.previousMove = Move::Invalid();
+
     Move bestMoveSoFar;
     Score previousScore = invalidScore;
-
     for (std::int16_t currentDepth = 1; currentDepth <= threadData.searchLimits.depthLimit; currentDepth++) {
         rootNode.depth = currentDepth;
         aspirationWindow(threadData, &rootNode, previousScore);
@@ -229,7 +231,8 @@ Score Search::negamax(ThreadData& threadData, NodeData* nodeData, SearchStats& s
         }
     }
 
-    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable, threadData.killerMoveTable[nodeData->ply]};
+    const Move counterMove = (nodeData->previousMove.isValid() && !nodeData->previousMove.isNull()) ? data.counterMoveTable[static_cast<std::uint8_t>(nodeData->previousMove.getPiece())][nodeData->previousMove.getTo().index()] : Move::Invalid();
+    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable, threadData.killerMoveTable[nodeData->ply], counterMove};
     std::uint8_t moveCount = 0;
     std::uint8_t quietMoveCount = 0;
     Move outMove;
@@ -420,7 +423,8 @@ Score Search::quiescenceNegamax(ThreadData &threadData, NodeData *nodeData, Sear
     if (alpha < bestScore)
         alpha = bestScore;
 
-    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable, threadData.killerMoveTable[nodeData->ply]};
+    const Move counterMove = (nodeData->previousMove.isValid() && !nodeData->previousMove.isNull()) ? data.counterMoveTable[static_cast<std::uint8_t>(nodeData->previousMove.getPiece())][nodeData->previousMove.getTo().index()] : Move::Invalid();
+    MoveSorter moveSorter {currentPosition, ttMove, threadData.moveHistoryTable, threadData.killerMoveTable[nodeData->ply], counterMove};
     Move outMove;
     Move bestMove = Move::Invalid();
 
@@ -509,6 +513,13 @@ void Search::updateQuietMoveOrdering(ThreadData &threadData, NodeData *nodeData,
     if (bestMove != killerMoves.killer1) {
         killerMoves.killer2 = killerMoves.killer1;
         killerMoves.killer1 = bestMove;
+    }
+
+    // counter move heuristic
+    Move& previousMove = nodeData->previousMove;
+    // previous move is not null or unknown
+    if (previousMove.isValid() && !previousMove.isNull()) {
+        threadData.counterMoveTable[static_cast<std::uint8_t>(previousMove.getPiece())][previousMove.getTo().index()] = bestMove;
     }
 }
 

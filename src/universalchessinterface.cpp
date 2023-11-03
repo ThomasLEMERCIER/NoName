@@ -164,6 +164,7 @@ void UniversalChessInterface::bench() {
 
         threadData.moveHistoryTable = {};
         threadData.killerMoveTable = {};
+        threadData.counterMoveTable = {};
 
         search.setStopSearchFlag(false);
         search.searchInternal(threadData);
