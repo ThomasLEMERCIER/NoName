@@ -56,9 +56,19 @@ bool MoveSorter::nextMove(Move& outMove, bool skipQuiet, bool skipBadNonQuiet) {
             [[fallthrough]];
         case MoveSorterStage::Killer2:
             if (!skipQuiet) {
-                currentStage = MoveSorterStage::OrderingQuiets;
+                currentStage = MoveSorterStage::CounterMove;
                 if (moveList.filter(killerMoves.killer2)) {
                     outMove = killerMoves.killer2;
+                    return true;
+                }
+            }
+
+            [[fallthrough]];
+        case MoveSorterStage::CounterMove:
+            if (!skipQuiet) {
+                currentStage = MoveSorterStage::OrderingQuiets;
+                if (moveList.filter(counterMove)) {
+                    outMove = counterMove;
                     return true;
                 }
             }
