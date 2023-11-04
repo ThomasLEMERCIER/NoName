@@ -30,8 +30,8 @@ constexpr std::uint32_t baseLateMovePruning = 3;
 constexpr std::uint32_t scaleLateMovePruning = 8;
 
 constexpr std::int16_t seePruningDepth = 8;
-constexpr std::int32_t scaleNonQuietSeePruning = -80;
-constexpr std::int32_t scaleQuietSeePruning = -30;
+constexpr std::int32_t scaleNonQuietSeePruning = -120;
+constexpr std::int32_t scaleQuietSeePruning = -45;
 
 
 void initSearchParameters();
